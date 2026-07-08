@@ -1,0 +1,60 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Mark } from "@/components/Logo";
+import { isAdmin } from "@/lib/admin-auth";
+import { logoutAction } from "./actions";
+
+export const metadata: Metadata = {
+  title: "Admin — H06 Rentals",
+  robots: { index: false, follow: false },
+};
+
+const TABS = [
+  { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/fleet", label: "Fleet & Rates" },
+  { href: "/admin/addons", label: "Add-ons" },
+  { href: "/admin/enquiries", label: "Enquiries" },
+];
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const authed = await isAdmin();
+
+  return (
+    <div className="min-h-screen bg-ink">
+      <header className="border-b hairline">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <div className="flex items-center gap-3">
+            <Mark variant="silver" size={26} />
+            <span className="text-xs font-semibold uppercase tracking-[0.28em] text-cream-dim">
+              H06 Operations
+            </span>
+          </div>
+          {authed && (
+            <div className="flex items-center gap-6">
+              <nav className="hidden gap-5 md:flex" aria-label="Admin">
+                {TABS.map((t) => (
+                  <Link key={t.href} href={t.href} className="text-sm text-cream-dim hover:text-cream">
+                    {t.label}
+                  </Link>
+                ))}
+              </nav>
+              <form action={logoutAction}>
+                <button className="btn btn-ghost btn-sm">Sign out</button>
+              </form>
+            </div>
+          )}
+        </div>
+        {authed && (
+          <nav className="flex gap-4 overflow-x-auto px-5 pb-3 md:hidden" aria-label="Admin mobile">
+            {TABS.map((t) => (
+              <Link key={t.href} href={t.href} className="whitespace-nowrap text-sm text-cream-dim">
+                {t.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </header>
+      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">{children}</div>
+    </div>
+  );
+}

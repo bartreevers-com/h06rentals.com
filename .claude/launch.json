@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "h06-prod",
+      "runtimeExecutable": "/Users/apple/.local/node/bin/node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "start", "-p", "3006"],
+      "port": 3006
+    }
+  ]
+}
