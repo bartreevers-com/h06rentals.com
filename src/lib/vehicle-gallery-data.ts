@@ -1,10 +1,10 @@
 /**
- * H06's own fleet photography (studio sets shot on the emerald showroom
- * stage, plus Lagos location shots). Cards and the home showroom keep the
+ * H06 fleet photography — dark emerald studio sets only (side/front/rear/
+ * interior), film-graded for the web. Cards and the home showroom keep the
  * blueprint icons; these appear on vehicle detail pages.
  *
- * Vehicles without their own photography (and the armoured fleet, by
- * design) fall back to the blueprint turntable stage.
+ * Vehicles without matching studio photography (and the armoured fleet, by
+ * design) use the blueprint turntable stage instead.
  */
 export const VEHICLE_GALLERIES: Record<string, { src: string; credit?: string }[]> = {
   prado_2020: [
@@ -12,14 +12,12 @@ export const VEHICLE_GALLERIES: Record<string, { src: string; credit?: string }[
     { src: "/vehicles/prado_2020_front.webp" },
     { src: "/vehicles/prado_2020_rear.webp" },
     { src: "/vehicles/prado_2020_interior.webp" },
-    { src: "/vehicles/prado_2020_lagos.webp" },
   ],
   prado_2022: [
     { src: "/vehicles/prado_2022_side.webp" },
     { src: "/vehicles/prado_2022_front.webp" },
     { src: "/vehicles/prado_2022_rear.webp" },
     { src: "/vehicles/prado_2022_interior.webp" },
-    { src: "/vehicles/prado_2022_lagos.webp" },
   ],
   gx460_2020: [
     { src: "/vehicles/gx460_2020_side.webp" },
@@ -38,18 +36,13 @@ export const VEHICLE_GALLERIES: Record<string, { src: string; credit?: string }[
     { src: "/vehicles/hilux_2022_front.webp" },
     { src: "/vehicles/hilux_2022_rear.webp" },
     { src: "/vehicles/hilux_2022_interior.webp" },
-    { src: "/vehicles/hilux_2022_lagos.webp" },
   ],
-  landcruiser_2024: [{ src: "/vehicles/landcruiser_2024_main.webp" }],
-  lx570: [
-    { src: "/vehicles/lx570_studio.webp" },
-    { src: "/vehicles/lx570_lagos.webp" },
-  ],
-  prado_2025: [{ src: "/vehicles/prado_2025_main.webp" }],
+  lx570: [{ src: "/vehicles/lx570_studio.webp" }],
 };
 
-/** Slugs whose placeholder galleries should be cleared if no H06 photography
- *  exists (previously seeded with licensed stock imagery). */
+/** All slugs whose galleries are managed by this file — the sync keeps the
+ *  database exactly in step with it (there is no admin gallery editor yet,
+ *  so the code is the source of truth). */
 export const ALL_GALLERY_SLUGS = [
   "prado_2020",
   "prado_2022",
