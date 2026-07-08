@@ -1,0 +1,84 @@
+<svg color="#8FCF9D" xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820">
+<style>
+  @keyframes h06spin { to { transform: rotate(-360deg); } }
+  .h06w { transform-box: view-box; animation: h06spin 1.05s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .h06w { animation: none; } }
+</style>
+
+<defs>
+  <filter id="rgh" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011 0.017" numOctaves="2" seed="71" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="7"></feDisplacementMap></filter>
+  <filter id="rgh2" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.013 0.019" numOctaves="2" seed="75" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="10"></feDisplacementMap></filter>
+  <filter id="rgh3" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.009 0.014" numOctaves="2" seed="80" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="5"></feDisplacementMap></filter>
+  <pattern id="hL" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="12" stroke="currentColor" stroke-width="2"></line></pattern>
+  <pattern id="hD" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><line x1="0" y1="0" x2="0" y2="8" stroke="currentColor" stroke-width="2.6"></line></pattern>
+  <clipPath id="glassClip"><path d="M 598 346 L 692 208 Q 880 192 1128 192 L 1322 200 Q 1344 204 1346 230 Q 1346 274 1342 306 L 1150 326 L 1140 340 L 598 346 Z"></path></clipPath>
+  <g id="wheel">
+    <circle r="114" fill="url(#hD)" fill-opacity="0.5"></circle>
+    <circle r="114" fill="none" stroke="currentColor" stroke-width="5"></circle>
+    <path d="M -74 -62 A 98 98 0 0 1 74 -62" fill="none" stroke="currentColor" stroke-width="3" opacity="0.6"></path>
+    <circle r="66" fill="none" stroke="currentColor" stroke-width="4.5"></circle>
+    <g stroke="currentColor" stroke-width="4.5" stroke-linecap="round">
+      <g id="spk"><path d="M 13 -9 L 60 -23.400000000000002 M 13 9 L 60 23.400000000000002" fill="none"></path></g><use href="#spk" transform="rotate(72)"></use><use href="#spk" transform="rotate(144)"></use><use href="#spk" transform="rotate(216)"></use><use href="#spk" transform="rotate(288)"></use></g>
+    <circle r="15" fill="none" stroke="currentColor" stroke-width="3"></circle>
+  </g>
+</defs>
+<g stroke="currentColor" stroke-width="2" fill="none" opacity="0.34" filter="url(#rgh2)" stroke-linecap="round">
+  <line x1="100" y1="586" x2="1520" y2="586"></line>
+  <line x1="90" y1="700" x2="1520" y2="700"></line>
+  <line x1="130" y1="706" x2="1480" y2="703" stroke-width="1.4"></line>
+  <circle cx="400" cy="586" r="126" stroke-width="1.8"></circle><circle cx="406" cy="588" r="119" stroke-width="1.2"></circle>
+  <circle cx="1180" cy="586" r="126" stroke-width="1.8"></circle><circle cx="1174" cy="584" r="119" stroke-width="1.2"></circle>
+  <line x1="400" y1="456" x2="400" y2="732" stroke-width="1.4"></line>
+  <line x1="1180" y1="456" x2="1180" y2="732" stroke-width="1.4"></line>
+  <line x1="60" y1="354" x2="1540" y2="318" stroke-width="1.4"></line>
+  
+  <line x1="400" y1="748" x2="1180" y2="748"></line>
+  <path d="M 418 741 L 400 748 L 418 755"></path><path d="M 1162 741 L 1180 748 L 1162 755"></path>
+  <line x1="400" y1="736" x2="400" y2="760" stroke-width="1.4"></line><line x1="1180" y1="736" x2="1180" y2="760" stroke-width="1.4"></line>
+</g>
+<g filter="url(#rgh2)">
+  <rect x="240" y="698" width="1110" height="20" fill="url(#hD)" opacity="0.7"></rect>
+  <rect x="300" y="694" width="200" height="14" fill="url(#hD)" opacity="0.9"></rect>
+  <rect x="1080" y="694" width="200" height="14" fill="url(#hD)" opacity="0.9"></rect>
+</g>
+<g filter="url(#rgh3)">
+  <path d="M 598 346 L 692 208 Q 880 192 1128 192 L 1322 200 Q 1344 204 1346 230 Q 1346 274 1342 306 L 1150 326 L 1140 340 L 598 346 Z" fill="currentColor" opacity="0.08"></path>
+  <g clip-path="url(#glassClip)"><rect x="500" y="186" width="920" height="52" fill="url(#hD)" opacity="0.5"></rect>
+    <path d="M 780 186 L 876 186 L 610 352 L 548 352 Z" fill="currentColor" opacity="0.14"></path>
+    <path d="M 930 186 L 966 186 L 764 352 L 738 352 Z" fill="currentColor" opacity="0.1"></path>
+    <rect x="500" y="294" width="920" height="58" fill="url(#hL)" opacity="0.4"></rect></g>
+</g>
+<g filter="url(#rgh2)"><path d="M 616 564 L 616 468 Q 830 458 1024 464 L 1024 564 Z" fill="url(#hL)" opacity="0.5"></path>
+  <path d="M 172 420 L 292 406 L 288 536 L 204 540 Z" fill="url(#hL)" opacity="0.55"></path>
+  <path d="M 1300 376 L 1412 368 L 1408 538 L 1310 544 Z" fill="url(#hL)" opacity="0.45"></path>
+  <path d="M 604 352 Q 800 340 1136 344 L 1136 358 Q 800 354 604 366 Z" fill="url(#hD)" opacity="0.32"></path>
+  <path d="M 288 558 A 130 114 0 0 1 512 558" fill="none" stroke="url(#hD)" stroke-width="30" opacity="0.55"></path>
+  <path d="M 1068 558 A 130 114 0 0 1 1292 558" fill="none" stroke="url(#hD)" stroke-width="30" opacity="0.55"></path>
+  <line x1="618" y1="560" x2="1026" y2="560" stroke="currentColor" stroke-width="10" opacity="0.6"></line></g>
+<g filter="url(#rgh)"><g class="h06w" style="transform-origin:400px 586px"><use href="#wheel" transform="translate(400,586)"></use></g><g class="h06w" style="transform-origin:1180px 586px"><use href="#wheel" transform="translate(1180,586)"></use></g></g>
+<g stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#rgh)">
+  <path d="M 206 556 L 184 540 Q 168 528 166 480 L 164 428 Q 164 398 186 390 Q 300 376 440 366 Q 545 356 588 348 L 686 202 Q 880 184 1130 184 L 1330 192 L 1396 186 L 1404 212 Q 1416 244 1418 320 L 1414 462 Q 1411 532 1398 550 L 1376 558 L 1330 564 A 150 132 0 0 0 1030 564 L 550 564 A 150 132 0 0 0 250 564 Z" stroke-width="7"></path>
+  <path d="M 598 346 L 692 208 Q 880 192 1128 192 L 1322 200 Q 1344 204 1346 230 Q 1346 274 1342 306 L 1150 326 L 1140 340 L 598 346 Z" stroke-width="4.5"></path>
+  <path d="M 610 352 L 1138 346 L 1152 334 L 1338 314" stroke-width="2.4" opacity="0.7"></path>
+  <line x1="858" y1="196" x2="868" y2="342" stroke-width="4"></line><line x1="876" y1="196" x2="886" y2="341" stroke-width="2.4"></line>
+  <line x1="1108" y1="194" x2="1120" y2="338" stroke-width="4"></line><line x1="1128" y1="194" x2="1136" y2="326" stroke-width="2.4"></line>
+  <line x1="1268" y1="198" x2="1274" y2="318" stroke-width="3.5"></line>
+  <path d="M 234 394 Q 420 376 578 356" stroke-width="3.5"></path>
+  <path d="M 194 398 Q 258 388 330 382 L 324 404 Q 256 408 204 416 Z" stroke-width="3.5"></path><path d="M 214 404 L 312 392" stroke-width="2"></path>
+  <path d="M 174 404 L 175 468 M 186 402 L 187 466" stroke-width="2.4"></path>
+  <path d="M 172 482 L 280 480" stroke-width="3"></path><rect x="188" y="446" width="46" height="24" rx="6" stroke-width="2.6"></rect>
+  <path d="M 696 358 L 692 554" stroke-width="3.2"></path><path d="M 926 362 L 922 556" stroke-width="3.2"></path><path d="M 1146 364 L 1143 444" stroke-width="3.2"></path>
+  <rect x="754" y="386" width="58" height="13" rx="6" stroke-width="3"></rect><rect x="982" y="388" width="58" height="13" rx="6" stroke-width="3"></rect><rect x="1198" y="392" width="58" height="13" rx="6" stroke-width="3"></rect>
+  <path d="M 596 330 L 584 312 L 630 304 L 642 328 L 612 338 Z" stroke-width="3.5"></path><path d="M 608 338 L 598 346" stroke-width="3"></path>
+  <rect x="606" y="566" width="404" height="13" rx="7" stroke-width="3" fill="currentColor" fill-opacity="0.9"></rect>
+  <path d="M 712 172 L 1252 172" stroke-width="4.5"></path><path d="M 724 172 L 734 186 M 980 172 L 986 185 M 1236 172 L 1228 188" stroke-width="3"></path>
+  <path d="M 1284 182 Q 1296 168 1312 180 L 1296 186 Z" stroke-width="3" fill="currentColor" fill-opacity="0.9"></path>
+  <path d="M 1330 210 L 1394 202" stroke-width="3"></path>
+  <path d="M 1386 296 L 1414 288 L 1416 340 L 1390 346 Z" stroke-width="3.2"></path><path d="M 1394 306 L 1408 302 M 1394 322 L 1408 318" stroke-width="2"></path>
+  <rect x="1324" y="416" width="32" height="38" rx="6" stroke-width="2.6"></rect>
+  <path d="M 236 546 A 160 144 0 0 1 564 546" stroke-width="3" opacity="0.7"></path><path d="M 1016 546 A 160 144 0 0 1 1344 546" stroke-width="3" opacity="0.7"></path>
+</g>
+<g stroke="currentColor" fill="none" stroke-linecap="round" opacity="0.45" filter="url(#rgh2)">
+  <path d="M 206 556 L 184 540 Q 168 528 166 480 L 164 428 Q 164 398 186 390 Q 300 376 440 366 Q 545 356 588 348 L 686 202 Q 880 184 1130 184 L 1330 192 L 1396 186 L 1404 212 Q 1416 244 1418 320 L 1414 462 Q 1411 532 1398 550 L 1376 558 L 1330 564 A 150 132 0 0 0 1030 564 L 550 564 A 150 132 0 0 0 250 564 Z" stroke-width="2.2"></path>
+</g>
+</svg>

@@ -246,5 +246,16 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 }
 .fade-up { animation: fadeUp 0.7s ease both; }
 
+/* ── sketch hover-spin (fleet cards) ──────────────────────────── */
+.sketch-swap { position: relative; }
+.sketch-swap .sketch-spin {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.group:hover .sketch-swap .sketch-spin { opacity: 1; }
+.group:hover .sketch-swap .sketch-static { opacity: 0; }
+
 /* thin scrollbars on dark */
 * { scrollbar-width: thin; scrollbar-color: rgba(201,205,209,0.2) transparent; }

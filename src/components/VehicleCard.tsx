@@ -34,6 +34,7 @@ export function VehicleCard({
               category={vehicle.category}
               name={vehicle.name}
               tint={vehicle.tier === "vip" ? "bronze" : "green"}
+              hoverSpin
               className="w-full max-w-md transition-transform duration-500 group-hover:scale-[1.03]"
             />
           </div>
