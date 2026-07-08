@@ -283,14 +283,22 @@ export async function seedIfEmpty(db: Db) {
   await syncGalleries(db);
 }
 
-/** Attach representative photo galleries to vehicles that don't have any yet
- *  (idempotent — never overwrites imagery the H06 team has uploaded). */
+/** Attach H06 photo galleries. Overwrites empty galleries and the licensed
+ *  stock placeholders from the first launch; never touches galleries the
+ *  H06 team has uploaded themselves (idempotent). */
 async function syncGalleries(db: Db) {
-  const { eq, and } = await import("drizzle-orm");
-  for (const [slug, gallery] of Object.entries(VEHICLE_GALLERIES)) {
+  const { eq, and, or } = await import("drizzle-orm");
+  const { ALL_GALLERY_SLUGS } = await import("../vehicle-gallery-data");
+  for (const slug of ALL_GALLERY_SLUGS) {
+    const gallery = VEHICLE_GALLERIES[slug] ?? [];
     await db
       .update(schema.vehicles)
       .set({ gallery })
-      .where(and(eq(schema.vehicles.slug, slug), sql`gallery = '[]'::jsonb`));
+      .where(
+        and(
+          eq(schema.vehicles.slug, slug),
+          or(sql`gallery = '[]'::jsonb`, sql`gallery::text LIKE '%Wikimedia%'`),
+        ),
+      );
   }
 }

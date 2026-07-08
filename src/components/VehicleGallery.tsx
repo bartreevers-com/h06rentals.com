@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 /**
- * Vehicle photo gallery for detail pages. Shows the real car; the caption is
- * honest about representative imagery until H06's studio shots land.
+ * Vehicle photo gallery for detail pages. H06's own photography carries no
+ * caption; licensed placeholder imagery (credit set) is labelled honestly.
  */
 export function VehicleGallery({
   images,
@@ -26,9 +26,11 @@ export function VehicleGallery({
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal/45 via-transparent to-transparent" />
-        <span className="absolute bottom-4 left-4 glass-subtle px-3.5 py-1.5 text-xs text-cream-dim">
-          Representative imagery · 360° studio shoot in production
-        </span>
+        {current.credit && (
+          <span className="absolute bottom-4 left-4 glass-subtle px-3.5 py-1.5 text-xs text-cream-dim">
+            Representative imagery
+          </span>
+        )}
       </div>
 
       {images.length > 1 && (
