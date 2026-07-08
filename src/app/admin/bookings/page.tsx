@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const STATUS_TONE: Record<string, string> = {
   pending_payment: "border-cream/25 text-cream-dim",
   pending_confirmation: "border-emerald-glow/40 text-emerald-glow",
-  confirmed: "border-champagne/40 text-champagne",
+  confirmed: "border-emerald-glow/40 text-emerald-glow",
   completed: "border-cream/20 text-muted",
   cancelled: "border-red-400/40 text-red-300",
 };
@@ -44,7 +44,7 @@ export default async function AdminBookings() {
             return (
               <details key={b.id} className="glass-subtle overflow-hidden">
                 <summary className="flex cursor-pointer flex-wrap items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
-                  <span className="font-mono text-sm text-champagne">{b.ref}</span>
+                  <span className="font-mono text-sm text-emerald-glow">{b.ref}</span>
                   <span className="text-sm text-cream">{b.customerName}</span>
                   <span className="text-xs text-muted">
                     {trip?.shortLabel ?? b.tripType}
@@ -81,7 +81,7 @@ export default async function AdminBookings() {
                         {outstanding > 0 ? ` · outstanding ${formatNaira(outstanding)}` : " · settled"}
                       </span>
                     </p>
-                    {b.isEstimate && <p className="text-champagne">Contains estimated items — confirm final price</p>}
+                    {b.isEstimate && <p className="text-cream-dim">Contains estimated items — confirm final price</p>}
                     {b.notes && <p className="sm:col-span-2 lg:col-span-3"><span className="text-muted">Customer notes:</span> <span className="text-cream">{b.notes}</span></p>}
                   </div>
 

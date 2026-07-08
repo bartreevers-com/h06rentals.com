@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   image_url TEXT,
   frames_360 JSONB NOT NULL DEFAULT '[]',
   interior_images JSONB NOT NULL DEFAULT '[]',
+  gallery JSONB NOT NULL DEFAULT '[]',
   is_available BOOLEAN NOT NULL DEFAULT TRUE,
   sort_order INTEGER NOT NULL DEFAULT 100,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -173,4 +174,5 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS gallery JSONB NOT NULL DEFAULT '[]';
 `;

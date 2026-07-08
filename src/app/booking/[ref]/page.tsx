@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Mark } from "@/components/Logo";
 import { PayActions } from "@/components/booking/PayActions";
 import { formatNaira } from "@/lib/quote";
-import { getBookingByRef } from "@/lib/repo";
+import { getBookingByRef, getVehicle } from "@/lib/repo";
 import { getTripType } from "@/lib/trip-types";
 import { bookingWhatsAppMessage, waLink } from "@/lib/whatsapp";
 
@@ -15,13 +15,24 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const STATUS_UI: Record<string, { label: string; tone: "emerald" | "bronze" | "neutral" | "red" }> = {
-  pending_payment: { label: "Awaiting payment", tone: "neutral" },
-  pending_confirmation: { label: "Awaiting concierge confirmation", tone: "emerald" },
-  confirmed: { label: "Confirmed", tone: "bronze" },
-  completed: { label: "Completed", tone: "bronze" },
-  cancelled: { label: "Cancelled", tone: "red" },
-};
+/** Bronze is reserved for the VIP wing — core bookings celebrate in emerald. */
+function statusUi(status: string, isVip: boolean): { label: string; tone: "emerald" | "bronze" | "neutral" | "red" } {
+  const celebratory = isVip ? ("bronze" as const) : ("emerald" as const);
+  switch (status) {
+    case "pending_payment":
+      return { label: "Awaiting payment", tone: "neutral" };
+    case "pending_confirmation":
+      return { label: "Awaiting concierge confirmation", tone: "emerald" };
+    case "confirmed":
+      return { label: "Confirmed", tone: celebratory };
+    case "completed":
+      return { label: "Completed", tone: celebratory };
+    case "cancelled":
+      return { label: "Cancelled", tone: "red" };
+    default:
+      return { label: "Awaiting concierge confirmation", tone: "emerald" };
+  }
+}
 
 export default async function BookingPage({
   params,
@@ -36,7 +47,9 @@ export default async function BookingPage({
   if (!booking) notFound();
 
   const trip = getTripType(booking.tripType);
-  const ui = STATUS_UI[booking.status] ?? STATUS_UI.pending_confirmation;
+  const vehicle = booking.vehicleSlug ? await getVehicle(booking.vehicleSlug) : null;
+  const isVip = vehicle?.tier === "vip" || booking.tripType === "vip_security";
+  const ui = statusUi(booking.status, isVip);
   const paid = booking.amountPaid > 0;
   const outstanding = Math.max(0, booking.amountDue - booking.amountPaid);
   const celebration = paid || booking.status === "confirmed" || booking.status === "completed";
@@ -45,8 +58,12 @@ export default async function BookingPage({
   return (
     <div className="mx-auto max-w-3xl px-5 pb-24 pt-28 lg:px-0">
       <div className="flex flex-col items-center text-center">
-        <Mark variant={celebration ? "bronze" : "emerald"} size={72} className={celebration ? "mark-pulse" : ""} />
-        <p className={`eyebrow mt-6 ${celebration ? "eyebrow-bronze" : "eyebrow-emerald"}`}>
+        <Mark
+          variant={celebration && isVip ? "bronze" : celebration ? "emerald" : "silver"}
+          size={72}
+          className={celebration ? "mark-pulse" : ""}
+        />
+        <p className={`eyebrow mt-6 ${celebration && isVip ? "eyebrow-bronze" : "eyebrow-emerald"}`}>
           Booking {booking.ref}
         </p>
         <h1 className="display mt-3 text-3xl text-cream md:text-4xl">
@@ -122,7 +139,7 @@ export default async function BookingPage({
           <span className="display text-2xl text-emerald-glow">{formatNaira(booking.quoteTotal)}</span>
         </div>
         {booking.isEstimate && (
-          <p className="mt-2 text-xs text-champagne">Estimated quote. Final confirmation by H06 concierge.</p>
+          <p className="mt-2 text-xs text-cream-dim">Estimated quote. Final confirmation by H06 concierge.</p>
         )}
         {paid && (
           <p className="mt-3 rounded-lg border border-emerald-glow/30 bg-emerald-deep/15 p-3 text-sm text-emerald-glow">

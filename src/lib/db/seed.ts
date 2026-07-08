@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
+import { VEHICLE_GALLERIES } from "../vehicle-gallery-data";
 
 type Db = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof schema>;
 
@@ -10,7 +11,10 @@ type Db = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof schema>;
  */
 export async function seedIfEmpty(db: Db) {
   const existing = await db.select({ n: sql<number>`count(*)` }).from(schema.vehicles);
-  if (Number(existing[0]?.n ?? 0) > 0) return;
+  if (Number(existing[0]?.n ?? 0) > 0) {
+    await syncGalleries(db);
+    return;
+  }
 
   await db.insert(schema.vehicles).values([
     {
@@ -275,4 +279,18 @@ export async function seedIfEmpty(db: Db) {
     { key: "deposit_percent", value: "50" },
     { key: "bank_transfer_details", value: "Account details are shared by our concierge on WhatsApp after booking." },
   ]);
+
+  await syncGalleries(db);
+}
+
+/** Attach representative photo galleries to vehicles that don't have any yet
+ *  (idempotent — never overwrites imagery the H06 team has uploaded). */
+async function syncGalleries(db: Db) {
+  const { eq, and } = await import("drizzle-orm");
+  for (const [slug, gallery] of Object.entries(VEHICLE_GALLERIES)) {
+    await db
+      .update(schema.vehicles)
+      .set({ gallery })
+      .where(and(eq(schema.vehicles.slug, slug), sql`gallery = '[]'::jsonb`));
+  }
 }

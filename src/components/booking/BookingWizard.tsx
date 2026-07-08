@@ -7,6 +7,7 @@ import type { AddOn, InterstateSurcharge, Vehicle, VehicleRate } from "@/lib/db/
 import { computeQuote, formatNaira } from "@/lib/quote";
 import { CHAUFFEUR_TIERS, getTripType, TRIP_TYPES, TRIP_VEHICLE_AFFINITY } from "@/lib/trip-types";
 import { VehicleSilhouette } from "@/components/VehicleSilhouette";
+import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 interface Props {
   vehicles: Vehicle[];
@@ -268,7 +269,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                     <p className="text-sm font-medium text-cream">{t.label}</p>
                     <p className="mt-1.5 text-xs leading-relaxed text-muted">{t.description}</p>
                     {!t.instantQuote && (
-                      <p className="mt-2 text-[0.68rem] uppercase tracking-wider text-champagne">
+                      <p className="mt-2 text-[0.68rem] uppercase tracking-wider text-muted">
                         Concierge quoted
                       </p>
                     )}
@@ -281,25 +282,23 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="field-label" htmlFor="pickup">Pickup location</label>
-                  <input
+                  <LocationAutocomplete
                     id="pickup"
-                    className="field"
                     placeholder={
                       form.tripType === "airport_pickup"
                         ? "e.g. MMIA Terminal 2, Ikeja"
                         : "e.g. Eko Hotel, Victoria Island"
                     }
                     value={form.pickupLocation}
-                    onChange={(e) => set("pickupLocation", e.target.value)}
+                    onChange={(v) => set("pickupLocation", v)}
                   />
                 </div>
 
                 {trip.needsDestination && (
                   <div className="sm:col-span-2">
                     <label className="field-label" htmlFor="destination">Destination</label>
-                    <input
+                    <LocationAutocomplete
                       id="destination"
-                      className="field"
                       placeholder={
                         form.tripType === "airport_dropoff"
                           ? "e.g. MMIA Terminal 1"
@@ -308,7 +307,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                             : "Where are we headed?"
                       }
                       value={form.destination}
-                      onChange={(e) => set("destination", e.target.value)}
+                      onChange={(v) => set("destination", v)}
                     />
                   </div>
                 )}
@@ -519,7 +518,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                                 </p>
                               </>
                             ) : (
-                              <p className="text-[0.68rem] uppercase tracking-wider text-champagne">
+                              <p className={`text-[0.68rem] uppercase tracking-wider ${v.tier === "vip" ? "text-champagne" : "text-muted"}`}>
                                 Concierge priced
                               </p>
                             )}
@@ -632,7 +631,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                     />
                   </div>
                   {quote.isEstimate && (
-                    <p className="mt-3 rounded-lg border border-champagne/30 bg-ink/40 p-3 text-xs leading-relaxed text-champagne">
+                    <p className="mt-3 rounded-lg border border-cream/20 bg-ink/40 p-3 text-xs leading-relaxed text-cream-dim">
                       Part of this trip is an estimated quote. Final confirmation by H06 concierge —
                       you can still pay the fixed portion now or confirm everything on WhatsApp first.
                     </p>
@@ -704,7 +703,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                   </p>
                 )}
                 {quote.isEstimate && (
-                  <p className="mt-3 text-xs leading-relaxed text-champagne">
+                  <p className="mt-3 text-xs leading-relaxed text-cream-dim">
                     Estimated quote. Final confirmation by H06 concierge.
                   </p>
                 )}

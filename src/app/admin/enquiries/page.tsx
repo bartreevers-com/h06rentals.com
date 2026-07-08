@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const TONE: Record<string, string> = {
   new: "border-emerald-glow/40 text-emerald-glow",
-  responded: "border-champagne/40 text-champagne",
+  responded: "border-emerald-glow/40 text-emerald-glow",
   closed: "border-cream/20 text-muted",
 };
 
@@ -33,7 +33,7 @@ export default async function AdminEnquiries() {
                 </span>
                 <span className="text-sm font-medium text-cream">{e.name}</span>
                 <span className="text-xs text-muted">{e.phone}{e.email ? ` · ${e.email}` : ""}</span>
-                {e.vehicleSlug && <span className="text-xs text-champagne">{e.vehicleSlug}</span>}
+                {e.vehicleSlug && <span className="text-xs text-cream-dim">{e.vehicleSlug}</span>}
                 <span className={`ml-auto rounded-full border px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wider ${TONE[e.status]}`}>
                   {e.status}
                 </span>

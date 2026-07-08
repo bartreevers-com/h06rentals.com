@@ -34,7 +34,7 @@ export default async function MockPayPage({
     <div className="mx-auto max-w-md px-5 pb-24 pt-32">
       <div className="glass p-8 text-center">
         <Mark variant="silver" size={48} className="mx-auto" />
-        <p className="mt-5 rounded-lg border border-champagne/40 bg-ink/50 px-3 py-2 text-xs uppercase tracking-wider text-champagne">
+        <p className="mt-5 rounded-lg border border-cream/25 bg-ink/50 px-3 py-2 text-xs uppercase tracking-wider text-cream-dim">
           Test mode — no real money moves
         </p>
         <h1 className="display mt-6 text-2xl text-cream">Secure checkout</h1>

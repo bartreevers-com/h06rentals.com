@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { HeroStage } from "@/components/HeroStage";
 import { Mark } from "@/components/Logo";
 import { Reveal } from "@/components/Reveal";
 import { VehicleCard } from "@/components/VehicleCard";
@@ -26,36 +27,38 @@ export default async function HomePage() {
   return (
     <>
       {/* ── Hero: entering the showroom ─────────────────────────── */}
-      <section className="relative min-h-[92vh] overflow-hidden flex items-end">
-        <Image
-          src="/images/hero-lagos-bridge.webp"
-          alt="H06 chauffeur-driven Prado crossing the Lekki-Ikoyi Link Bridge at night"
-          fill
-          priority
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/55 to-charcoal/25" />
-        <div className="absolute inset-0 bg-gradient-to-r from-charcoal/60 to-transparent" />
+      <section className="stage-gradient relative min-h-[92vh] overflow-hidden flex items-center">
+        <div className="mark-watermark" style={{ backgroundSize: "38%", backgroundPosition: "82% 18%" }} />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-20 pt-40 lg:px-8">
-          <div className="max-w-2xl fade-up">
-            <p className="eyebrow eyebrow-emerald mb-5">Lagos · Private luxury mobility</p>
-            <h1 className="display text-5xl leading-[1.05] text-cream md:text-7xl">
-              The showroom
-              <br />
-              is open.
-            </h1>
-            <p className="mt-6 max-w-md text-lg text-cream-dim">
-              Chauffeur-driven luxury for Lagos and beyond.
-              Over 5,000 trips delivered. Zero compromises.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-4">
-              <Link href="/fleet" className="btn btn-primary btn-lg">
-                Enter the showroom
-              </Link>
-              <Link href="/book" className="btn btn-ghost btn-lg">
-                Build my trip
-              </Link>
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-24 pt-36 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
+            <div className="fade-up">
+              <p className="eyebrow eyebrow-emerald mb-5">Lagos · Private luxury mobility</p>
+              <h1 className="display text-5xl leading-[1.05] text-cream md:text-7xl">
+                The showroom
+                <br />
+                is open.
+              </h1>
+              <p className="mt-6 max-w-md text-lg text-cream-dim">
+                Chauffeur-driven luxury for Lagos and beyond.
+                Over 5,000 trips delivered. Zero compromises.
+              </p>
+              <div className="mt-9 flex flex-wrap gap-4">
+                <Link href="/fleet" className="btn btn-primary btn-lg">
+                  Enter the showroom
+                </Link>
+                <Link href="/book" className="btn btn-ghost btn-lg">
+                  Build my trip
+                </Link>
+              </div>
+            </div>
+            <div className="mx-auto w-full max-w-xl lg:max-w-none">
+              <HeroStage />
+              <div className="mt-6 flex items-center justify-between border-t hairline pt-4 text-[0.68rem] uppercase tracking-[0.22em] text-muted">
+                <span>Chauffeur included</span>
+                <span>Fixed rates</span>
+                <span>Available 24/7</span>
+              </div>
             </div>
           </div>
         </div>

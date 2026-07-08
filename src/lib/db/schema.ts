@@ -29,6 +29,12 @@ export const vehicles = pgTable("vehicles", {
   /** Ordered 360° turntable frame URLs. Empty = 360 assets pending. */
   frames360: jsonb("frames_360").$type<string[]>().notNull().default([]),
   interiorImages: jsonb("interior_images").$type<string[]>().notNull().default([]),
+  /** Representative photo gallery shown on the vehicle page (cards keep the
+   *  blueprint icons). credit = attribution line for licensed imagery. */
+  gallery: jsonb("gallery")
+    .$type<{ src: string; credit?: string }[]>()
+    .notNull()
+    .default([]),
   isAvailable: boolean("is_available").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(100),
   createdAt: timestamp("created_at").notNull().defaultNow(),

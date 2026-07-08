@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { Turntable360 } from "@/components/Turntable360";
+import { VehicleGallery } from "@/components/VehicleGallery";
 import { formatNaira } from "@/lib/quote";
 import { getRate, getVehicle, listVehicles } from "@/lib/repo";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
@@ -47,12 +48,23 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
       <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <Reveal>
-            <Turntable360
-              frames={vehicle.frames360}
-              category={vehicle.category}
-              vehicleName={vehicle.name}
-              imageUrl={vehicle.imageUrl}
-            />
+            {vehicle.frames360.length >= 8 ? (
+              <Turntable360
+                frames={vehicle.frames360}
+                category={vehicle.category}
+                vehicleName={vehicle.name}
+                imageUrl={vehicle.imageUrl}
+              />
+            ) : vehicle.gallery.length > 0 ? (
+              <VehicleGallery images={vehicle.gallery} vehicleName={vehicle.name} />
+            ) : (
+              <Turntable360
+                frames={vehicle.frames360}
+                category={vehicle.category}
+                vehicleName={vehicle.name}
+                imageUrl={vehicle.imageUrl}
+              />
+            )}
           </Reveal>
 
           <Reveal className="mt-8">
@@ -151,7 +163,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                 </>
               )}
               {!vehicle.isAvailable && (
-                <p className="mt-4 rounded-lg border border-bronze/40 bg-ink/40 p-3 text-xs text-champagne">
+                <p className="mt-4 rounded-lg border border-cream/20 bg-ink/40 p-3 text-xs text-cream-dim">
                   This vehicle is currently engaged. The concierge can suggest dates or an equivalent car.
                 </p>
               )}
