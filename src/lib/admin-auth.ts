@@ -5,12 +5,12 @@ import { cookies } from "next/headers";
 /**
  * Staff sessions for the operations dashboard.
  *
- * One login, three roles: admin (everything), sales (bookings + enquiries),
- * driver (own trips). The ADMIN_PASSWORD env remains a break-glass owner
- * login so the H06 team can never lock themselves out.
+ * One login, four roles: owner (everything, incl. team management — the
+ * env-password break-glass login), admin (everything except team), sales
+ * (bookings + enquiries), driver (own trips).
  */
 
-export type StaffRole = "admin" | "sales" | "driver";
+export type StaffRole = "owner" | "admin" | "sales" | "driver";
 
 export interface Session {
   userId: number; // 0 = owner (env-password login)
@@ -61,7 +61,7 @@ export async function getSession(): Promise<Session | null> {
   try {
     const data = JSON.parse(Buffer.from(body, "base64url").toString());
     if (typeof data.e !== "number" || data.e < Date.now()) return null;
-    if (!["admin", "sales", "driver"].includes(data.r)) return null;
+    if (!["owner", "admin", "sales", "driver"].includes(data.r)) return null;
     return { userId: Number(data.s) || 0, role: data.r, name: String(data.n ?? "Staff") };
   } catch {
     return null;

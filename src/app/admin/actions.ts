@@ -29,7 +29,7 @@ export async function loginAction(_prev: { error?: string } | null, formData: Fo
 
   // Break-glass owner login via env password ("owner" or blank identifier).
   if ((identifier === "" || identifier.toLowerCase() === "owner") && password === adminPassword()) {
-    await createSession({ userId: 0, role: "admin", name: "Owner" });
+    await createSession({ userId: 0, role: "owner", name: "Owner" });
     redirect("/admin/bookings");
   }
 
@@ -57,7 +57,7 @@ export async function logoutAction() {
 /* ── bookings (admin + sales) ────────────────────────────────── */
 
 export async function setBookingStatusAction(formData: FormData) {
-  await requireRole("admin", "sales");
+  await requireRole("owner", "admin", "sales");
   const id = Number(formData.get("id"));
   const status = String(formData.get("status"));
   const allowed = ["pending_payment", "pending_confirmation", "confirmed", "completed", "cancelled"];
@@ -68,7 +68,7 @@ export async function setBookingStatusAction(formData: FormData) {
 }
 
 export async function saveAdminNotesAction(formData: FormData) {
-  await requireRole("admin", "sales");
+  await requireRole("owner", "admin", "sales");
   const id = Number(formData.get("id"));
   const notes = String(formData.get("adminNotes") ?? "");
   if (!id) return;
@@ -78,7 +78,7 @@ export async function saveAdminNotesAction(formData: FormData) {
 }
 
 export async function assignDriverAction(formData: FormData) {
-  await requireRole("admin", "sales");
+  await requireRole("owner", "admin", "sales");
   const id = Number(formData.get("id"));
   const driverIdRaw = String(formData.get("driverId") ?? "");
   if (!id) return;
@@ -103,7 +103,7 @@ export async function assignDriverAction(formData: FormData) {
 /* ── driver trip flow ────────────────────────────────────────── */
 
 export async function startTripAction(formData: FormData) {
-  const session = await requireRole("driver", "admin");
+  const session = await requireRole("driver", "admin", "owner");
   const id = Number(formData.get("id"));
   if (!id) return;
   const db = await getDb();
@@ -120,7 +120,7 @@ export async function startTripAction(formData: FormData) {
 }
 
 export async function completeTripAction(formData: FormData) {
-  const session = await requireRole("driver", "admin");
+  const session = await requireRole("driver", "admin", "owner");
   const id = Number(formData.get("id"));
   if (!id) return;
   const db = await getDb();
@@ -139,7 +139,7 @@ export async function completeTripAction(formData: FormData) {
 /* ── fleet & rates (admin only) ──────────────────────────────── */
 
 export async function toggleVehicleAction(formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner", "admin");
   const slug = String(formData.get("slug"));
   const db = await getDb();
   const rows = await db.select().from(vehicles).where(eq(vehicles.slug, slug)).limit(1);
@@ -155,7 +155,7 @@ export async function toggleVehicleAction(formData: FormData) {
 }
 
 export async function updateVehicleAction(formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner", "admin");
   const slug = String(formData.get("slug"));
   const db = await getDb();
   const tagline = String(formData.get("tagline") ?? "");
@@ -169,7 +169,7 @@ export async function updateVehicleAction(formData: FormData) {
 }
 
 export async function updateRatesAction(formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner", "admin");
   const slug = String(formData.get("slug"));
   const fields = [
     "airportTransfer",
@@ -198,7 +198,7 @@ export async function updateRatesAction(formData: FormData) {
 /* ── add-ons (admin only) ────────────────────────────────────── */
 
 export async function updateAddOnAction(formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner", "admin");
   const slug = String(formData.get("slug"));
   const priceRaw = String(formData.get("priceNgn") ?? "").trim();
   const isActive = formData.get("isActive") === "on";
@@ -213,7 +213,7 @@ export async function updateAddOnAction(formData: FormData) {
 /* ── enquiries (admin + sales) ───────────────────────────────── */
 
 export async function setEnquiryStatusAction(formData: FormData) {
-  await requireRole("admin", "sales");
+  await requireRole("owner", "admin", "sales");
   const id = Number(formData.get("id"));
   const status = String(formData.get("status"));
   if (!id || !["new", "responded", "closed"].includes(status)) return;
@@ -225,7 +225,7 @@ export async function setEnquiryStatusAction(formData: FormData) {
 /* ── team management (admin only) ────────────────────────────── */
 
 export async function createStaffAction(_prev: { error?: string; ok?: string } | null, formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner");
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
@@ -250,7 +250,7 @@ export async function createStaffAction(_prev: { error?: string; ok?: string } |
 }
 
 export async function toggleStaffAction(formData: FormData) {
-  const session = await requireRole("admin");
+  const session = await requireRole("owner");
   const id = Number(formData.get("id"));
   if (!id || id === session.userId) return; // can't deactivate yourself
   const db = await getDb();
@@ -262,7 +262,7 @@ export async function toggleStaffAction(formData: FormData) {
 }
 
 export async function resetStaffPasswordAction(_prev: { error?: string; ok?: string } | null, formData: FormData) {
-  await requireRole("admin");
+  await requireRole("owner");
   const id = Number(formData.get("id"));
   const password = String(formData.get("password") ?? "");
   if (!id) return { error: "Missing user" };

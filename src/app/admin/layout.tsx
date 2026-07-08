@@ -9,14 +9,16 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const OPS_TABS = [
+  { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/fleet", label: "Fleet & Rates" },
+  { href: "/admin/addons", label: "Add-ons" },
+  { href: "/admin/enquiries", label: "Enquiries" },
+];
+
 const TABS: Record<string, { href: string; label: string }[]> = {
-  admin: [
-    { href: "/admin/bookings", label: "Bookings" },
-    { href: "/admin/fleet", label: "Fleet & Rates" },
-    { href: "/admin/addons", label: "Add-ons" },
-    { href: "/admin/enquiries", label: "Enquiries" },
-    { href: "/admin/team", label: "Team" },
-  ],
+  owner: [...OPS_TABS, { href: "/admin/team", label: "Team" }],
+  admin: OPS_TABS,
   sales: [
     { href: "/admin/bookings", label: "Bookings" },
     { href: "/admin/enquiries", label: "Enquiries" },

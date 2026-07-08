@@ -13,7 +13,7 @@ const TONE: Record<string, string> = {
 };
 
 export default async function AdminEnquiries() {
-  if (!(await hasRole("admin", "sales"))) redirect("/admin");
+  if (!(await hasRole("owner", "admin", "sales"))) redirect("/admin");
   const rows = await listEnquiries();
 
   return (

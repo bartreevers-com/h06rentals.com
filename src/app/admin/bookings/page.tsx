@@ -21,7 +21,7 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default async function AdminBookings() {
-  const session = await hasRole("admin", "sales");
+  const session = await hasRole("owner", "admin", "sales");
   if (!session) redirect("/admin");
   const db = await getDb();
   const [rows, stats, drivers] = await Promise.all([

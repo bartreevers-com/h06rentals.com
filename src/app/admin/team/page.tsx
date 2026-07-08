@@ -15,7 +15,7 @@ const ROLE_TONE: Record<string, string> = {
 };
 
 export default async function AdminTeam() {
-  if (!(await hasRole("admin"))) redirect("/admin");
+  if (!(await hasRole("owner"))) redirect("/admin");
   const db = await getDb();
   const rows = await db.select().from(staffUsers).orderBy(asc(staffUsers.role), asc(staffUsers.name));
 
@@ -23,8 +23,9 @@ export default async function AdminTeam() {
     <div>
       <h1 className="display text-2xl text-cream">Team</h1>
       <p className="mt-1 text-sm text-muted">
-        One sign-in page for everyone — the role decides what they see. Admin: everything.
-        Sales: bookings &amp; enquiries. Driver: their assigned trips.
+        Owner-only. One sign-in page for everyone — the role decides what they see.
+        Admin: everything except this page. Sales: bookings &amp; enquiries.
+        Driver: their assigned trips.
       </p>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.4fr_1fr]">

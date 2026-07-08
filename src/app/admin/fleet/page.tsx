@@ -15,7 +15,7 @@ const RATE_FIELDS = [
 ] as const;
 
 export default async function AdminFleet() {
-  if (!(await hasRole("admin"))) redirect("/admin");
+  if (!(await hasRole("owner", "admin"))) redirect("/admin");
   const [vehicles, rates] = await Promise.all([listVehicles({ includeUnavailable: true }), listRates()]);
 
   return (

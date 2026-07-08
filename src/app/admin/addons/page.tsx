@@ -6,7 +6,7 @@ import { updateAddOnAction } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAddOns() {
-  if (!(await hasRole("admin"))) redirect("/admin");
+  if (!(await hasRole("owner", "admin"))) redirect("/admin");
   const rows = await listAddOns(false);
 
   return (
