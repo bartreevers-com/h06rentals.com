@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/admin-auth";
+import { hasRole } from "@/lib/admin-auth";
 import { listEnquiries } from "@/lib/repo";
 import { customerWaLink } from "@/lib/whatsapp";
 import { setEnquiryStatusAction } from "../actions";
@@ -13,7 +13,7 @@ const TONE: Record<string, string> = {
 };
 
 export default async function AdminEnquiries() {
-  if (!(await isAdmin())) redirect("/admin");
+  if (!(await hasRole("admin", "sales"))) redirect("/admin");
   const rows = await listEnquiries();
 
   return (

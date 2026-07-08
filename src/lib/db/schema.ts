@@ -109,6 +109,9 @@ export const bookings = pgTable("bookings", {
   amountDue: integer("amount_due").notNull().default(0),
   amountPaid: integer("amount_paid").notNull().default(0),
   adminNotes: text("admin_notes"),
+  assignedDriverId: integer("assigned_driver_id"),
+  tripStartedAt: timestamp("trip_started_at"),
+  tripCompletedAt: timestamp("trip_completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -151,6 +154,21 @@ export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+/** Staff accounts for the operations dashboard. One login, three views:
+ *  admin (everything), sales (bookings + enquiries), driver (own trips). */
+export const staffUsers = pgTable("staff_users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  email: text("email"),
+  role: text("role").notNull(), // admin | sales | driver
+  passwordHash: text("password_hash").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type StaffUser = typeof staffUsers.$inferSelect;
 
 export type Vehicle = typeof vehicles.$inferSelect;
 export type VehicleRate = typeof vehicleRates.$inferSelect;

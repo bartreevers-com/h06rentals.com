@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/admin-auth";
+import { asc, and, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { staffUsers } from "@/lib/db/schema";
+import { hasRole } from "@/lib/admin-auth";
 import { formatNaira } from "@/lib/quote";
 import { listBookings } from "@/lib/repo";
 import { bookingStats } from "@/lib/payments";
 import { getTripType } from "@/lib/trip-types";
 import { adminFollowUpMessage, customerWaLink } from "@/lib/whatsapp";
-import { saveAdminNotesAction, setBookingStatusAction } from "../actions";
+import { assignDriverAction, saveAdminNotesAction, setBookingStatusAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +21,19 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 export default async function AdminBookings() {
-  if (!(await isAdmin())) redirect("/admin");
-  const [rows, stats] = await Promise.all([listBookings(), bookingStats()]);
+  const session = await hasRole("admin", "sales");
+  if (!session) redirect("/admin");
+  const db = await getDb();
+  const [rows, stats, drivers] = await Promise.all([
+    listBookings(),
+    bookingStats(),
+    db
+      .select()
+      .from(staffUsers)
+      .where(and(eq(staffUsers.role, "driver"), eq(staffUsers.isActive, true)))
+      .orderBy(asc(staffUsers.name)),
+  ]);
+  const driverName = (id: number | null) => drivers.find((d) => d.id === id)?.name;
 
   return (
     <div>
@@ -86,6 +100,27 @@ export default async function AdminBookings() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <form action={assignDriverAction} className="flex items-center gap-2">
+                      <input type="hidden" name="id" value={b.id} />
+                      <select
+                        name="driverId"
+                        className="field !w-44 !py-1.5 text-sm"
+                        defaultValue={b.assignedDriverId ?? ""}
+                        aria-label="Assign driver"
+                      >
+                        <option value="">No driver assigned</option>
+                        {drivers.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                      <button className="btn btn-ghost btn-sm">Assign</button>
+                    </form>
+                    {b.assignedDriverId && (
+                      <span className="text-xs text-emerald-glow">
+                        Driver: {driverName(b.assignedDriverId) ?? "—"}
+                        {b.tripCompletedAt ? " · trip completed" : b.tripStartedAt ? " · trip in progress" : ""}
+                      </span>
+                    )}
                     <a
                       href={customerWaLink(b.customerPhone, adminFollowUpMessage(b))}
                       target="_blank"

@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/admin-auth";
+import { hasRole } from "@/lib/admin-auth";
 import { listAddOns } from "@/lib/repo";
 import { updateAddOnAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAddOns() {
-  if (!(await isAdmin())) redirect("/admin");
+  if (!(await hasRole("admin"))) redirect("/admin");
   const rows = await listAddOns(false);
 
   return (

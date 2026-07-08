@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/admin-auth";
+import { hasRole } from "@/lib/admin-auth";
 import { listRates, listVehicles } from "@/lib/repo";
 import { toggleVehicleAction, updateRatesAction, updateVehicleAction } from "../actions";
 
@@ -15,7 +15,7 @@ const RATE_FIELDS = [
 ] as const;
 
 export default async function AdminFleet() {
-  if (!(await isAdmin())) redirect("/admin");
+  if (!(await hasRole("admin"))) redirect("/admin");
   const [vehicles, rates] = await Promise.all([listVehicles({ includeUnavailable: true }), listRates()]);
 
   return (

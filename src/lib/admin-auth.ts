@@ -3,9 +3,21 @@ import crypto from "crypto";
 import { cookies } from "next/headers";
 
 /**
- * Simple HMAC-signed session for the admin dashboard.
- * ADMIN_PASSWORD must be set in production; a dev default keeps local QA easy.
+ * Staff sessions for the operations dashboard.
+ *
+ * One login, three roles: admin (everything), sales (bookings + enquiries),
+ * driver (own trips). The ADMIN_PASSWORD env remains a break-glass owner
+ * login so the H06 team can never lock themselves out.
  */
+
+export type StaffRole = "admin" | "sales" | "driver";
+
+export interface Session {
+  userId: number; // 0 = owner (env-password login)
+  role: StaffRole;
+  name: string;
+}
+
 const COOKIE = "h06_admin";
 const MAX_AGE = 60 * 60 * 12; // 12 hours
 
@@ -21,12 +33,12 @@ function sign(payload: string): string {
   return crypto.createHmac("sha256", secret()).update(payload).digest("hex");
 }
 
-export async function createAdminSession() {
-  const expires = Date.now() + MAX_AGE * 1000;
-  const payload = String(expires);
-  const token = `${payload}.${sign(payload)}`;
+export async function createSession(session: Session) {
+  const body = Buffer.from(
+    JSON.stringify({ s: session.userId, r: session.role, n: session.name, e: Date.now() + MAX_AGE * 1000 }),
+  ).toString("base64url");
   const jar = await cookies();
-  jar.set(COOKIE, token, {
+  jar.set(COOKIE, `${body}.${sign(body)}`, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -35,17 +47,44 @@ export async function createAdminSession() {
   });
 }
 
-export async function destroyAdminSession() {
+export async function destroySession() {
   const jar = await cookies();
   jar.delete(COOKIE);
 }
 
-export async function isAdmin(): Promise<boolean> {
+export async function getSession(): Promise<Session | null> {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (!token) return false;
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return false;
-  if (sign(payload) !== sig) return false;
-  return Number(payload) > Date.now();
+  if (!token) return null;
+  const [body, sig] = token.split(".");
+  if (!body || !sig || sign(body) !== sig) return null;
+  try {
+    const data = JSON.parse(Buffer.from(body, "base64url").toString());
+    if (typeof data.e !== "number" || data.e < Date.now()) return null;
+    if (!["admin", "sales", "driver"].includes(data.r)) return null;
+    return { userId: Number(data.s) || 0, role: data.r, name: String(data.n ?? "Staff") };
+  } catch {
+    return null;
+  }
+}
+
+export async function hasRole(...roles: StaffRole[]): Promise<Session | null> {
+  const session = await getSession();
+  return session && roles.includes(session.role) ? session : null;
+}
+
+/* ── password hashing (scrypt, no external deps) ─────────────── */
+
+export function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const candidate = crypto.scryptSync(password, salt, 64);
+  const expected = Buffer.from(hash, "hex");
+  return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
 }

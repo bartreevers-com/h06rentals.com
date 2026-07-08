@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Mark } from "@/components/Logo";
-import { isAdmin } from "@/lib/admin-auth";
+import { getSession } from "@/lib/admin-auth";
 import { logoutAction } from "./actions";
 
 export const metadata: Metadata = {
@@ -9,15 +9,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const TABS = [
-  { href: "/admin/bookings", label: "Bookings" },
-  { href: "/admin/fleet", label: "Fleet & Rates" },
-  { href: "/admin/addons", label: "Add-ons" },
-  { href: "/admin/enquiries", label: "Enquiries" },
-];
+const TABS: Record<string, { href: string; label: string }[]> = {
+  admin: [
+    { href: "/admin/bookings", label: "Bookings" },
+    { href: "/admin/fleet", label: "Fleet & Rates" },
+    { href: "/admin/addons", label: "Add-ons" },
+    { href: "/admin/enquiries", label: "Enquiries" },
+    { href: "/admin/team", label: "Team" },
+  ],
+  sales: [
+    { href: "/admin/bookings", label: "Bookings" },
+    { href: "/admin/enquiries", label: "Enquiries" },
+  ],
+  driver: [{ href: "/admin/trips", label: "My Trips" }],
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const authed = await isAdmin();
+  const session = await getSession();
+  const tabs = session ? TABS[session.role] ?? [] : [];
 
   return (
     <div className="min-h-screen bg-ink">
@@ -29,24 +38,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               H06 Operations
             </span>
           </div>
-          {authed && (
+          {session && (
             <div className="flex items-center gap-6">
               <nav className="hidden gap-5 md:flex" aria-label="Admin">
-                {TABS.map((t) => (
+                {tabs.map((t) => (
                   <Link key={t.href} href={t.href} className="text-sm text-cream-dim hover:text-cream">
                     {t.label}
                   </Link>
                 ))}
               </nav>
+              <span className="hidden text-xs text-muted sm:block">
+                {session.name} · {session.role}
+              </span>
               <form action={logoutAction}>
                 <button className="btn btn-ghost btn-sm">Sign out</button>
               </form>
             </div>
           )}
         </div>
-        {authed && (
+        {session && tabs.length > 1 && (
           <nav className="flex gap-4 overflow-x-auto px-5 pb-3 md:hidden" aria-label="Admin mobile">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <Link key={t.href} href={t.href} className="whitespace-nowrap text-sm text-cream-dim">
                 {t.label}
               </Link>
