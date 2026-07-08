@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VehicleSilhouette } from "./VehicleSilhouette";
+import { sketchFor } from "@/lib/sketches";
 
 /**
  * 360° vehicle turntable.
@@ -16,12 +17,15 @@ export function Turntable360({
   category,
   vehicleName,
   imageUrl,
+  slug,
 }: {
   frames: string[];
   category: string;
   vehicleName: string;
   imageUrl?: string | null;
+  slug?: string;
 }) {
+  const sketchSrc = slug ? sketchFor(slug) : null;
   const hasFrames = frames.length >= 8;
   const [frame, setFrame] = useState(0);
   const [sway, setSway] = useState(0);
@@ -123,7 +127,17 @@ export function Turntable360({
               transition: dragging.current ? "none" : "transform 0.4s ease",
             }}
           >
-            <VehicleSilhouette category={category} className="w-full drop-shadow-[0_30px_40px_rgba(0,0,0,0.5)]" />
+            {sketchSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={sketchSrc}
+                alt={`${vehicleName} design sketch`}
+                className="w-full drop-shadow-[0_30px_40px_rgba(0,0,0,0.5)]"
+                draggable={false}
+              />
+            ) : (
+              <VehicleSilhouette category={category} className="w-full drop-shadow-[0_30px_40px_rgba(0,0,0,0.5)]" />
+            )}
           </div>
         </div>
       )}

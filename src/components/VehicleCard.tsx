@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Vehicle, VehicleRate } from "@/lib/db/schema";
 import { formatNaira } from "@/lib/quote";
-import { VehicleSilhouette } from "./VehicleSilhouette";
+import { VehicleSketch } from "./VehicleSketch";
 
 export function VehicleCard({
   vehicle,
@@ -28,11 +28,12 @@ export function VehicleCard({
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center px-10">
-            <VehicleSilhouette
+          <div className="absolute inset-0 flex items-center justify-center px-8">
+            <VehicleSketch
+              slug={vehicle.slug}
               category={vehicle.category}
-              stroke={bronze ? "rgba(214,185,140,0.7)" : "rgba(63,174,133,0.75)"}
-              className="w-full max-w-sm transition-transform duration-500 group-hover:scale-[1.03]"
+              name={vehicle.name}
+              className="w-full max-w-md transition-transform duration-500 group-hover:scale-[1.03]"
             />
           </div>
         )}

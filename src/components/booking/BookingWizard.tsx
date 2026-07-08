@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import type { AddOn, InterstateSurcharge, Vehicle, VehicleRate } from "@/lib/db/schema";
 import { computeQuote, formatNaira } from "@/lib/quote";
 import { CHAUFFEUR_TIERS, getTripType, TRIP_TYPES, TRIP_VEHICLE_AFFINITY } from "@/lib/trip-types";
-import { VehicleSilhouette } from "@/components/VehicleSilhouette";
+import { VehicleSketch } from "@/components/VehicleSketch";
 import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 interface Props {
@@ -488,10 +488,11 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                           aria-pressed={selected}
                         >
                           <div className="hidden h-14 w-24 shrink-0 items-center justify-center sm:flex">
-                            <VehicleSilhouette
+                            <VehicleSketch
+                              slug={v.slug}
                               category={v.category}
-                              className="h-full w-full"
-                              stroke={v.tier === "vip" ? "rgba(214,185,140,0.6)" : "rgba(63,174,133,0.6)"}
+                              name={v.name}
+                              className="h-full w-full object-contain"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
