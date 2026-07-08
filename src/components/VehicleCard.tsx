@@ -33,6 +33,7 @@ export function VehicleCard({
               slug={vehicle.slug}
               category={vehicle.category}
               name={vehicle.name}
+              tint={vehicle.tier === "vip" ? "bronze" : "green"}
               className="w-full max-w-md transition-transform duration-500 group-hover:scale-[1.03]"
             />
           </div>

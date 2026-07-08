@@ -492,6 +492,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                               slug={v.slug}
                               category={v.category}
                               name={v.name}
+                              tint={v.tier === "vip" ? "bronze" : "green"}
                               className="h-full w-full object-contain"
                             />
                           </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VehicleSilhouette } from "./VehicleSilhouette";
-import { sketchFor } from "@/lib/sketches";
+import { sketchFor, type SketchTint } from "@/lib/sketches";
 
 /**
  * 360° vehicle turntable.
@@ -18,14 +18,16 @@ export function Turntable360({
   vehicleName,
   imageUrl,
   slug,
+  tint = "green",
 }: {
   frames: string[];
   category: string;
   vehicleName: string;
   imageUrl?: string | null;
   slug?: string;
+  tint?: SketchTint;
 }) {
-  const sketchSrc = slug ? sketchFor(slug) : null;
+  const sketchSrc = slug ? sketchFor(slug, tint) : null;
   const hasFrames = frames.length >= 8;
   const [frame, setFrame] = useState(0);
   const [sway, setSway] = useState(0);

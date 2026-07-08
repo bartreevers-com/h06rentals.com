@@ -5,16 +5,17 @@
   @keyframes h06road2 { to { stroke-dashoffset: -180; } }
   @keyframes h06drift { from { transform: translateX(0); } to { transform: translateX(1600px); } }
   @keyframes h06bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-  .h06-wheel { transform-box: view-box; animation: h06spin 1.6s linear infinite; }
+  .h06-wheel { transform-box: view-box; animation: h06spin 1.05s linear infinite; }
   .h06-wheel-f { transform-origin: 420px 582px; }
   .h06-wheel-r { transform-origin: 1150px 582px; }
-  .h06-road { animation: h06road 0.8s linear infinite; }
-  .h06-road-slow { animation: h06road2 1.35s linear infinite; }
-  .h06-trees-near { animation: h06drift 11s linear infinite; }
-  .h06-trees-far { animation: h06drift 19s linear infinite; }
-  .h06-bob { animation: h06bob 3.4s ease-in-out infinite; }
+  .h06-road { animation: h06road 0.5s linear infinite; }
+  .h06-road-slow { animation: h06road2 0.85s linear infinite; }
+  .h06-trees-near { animation: h06drift 6.5s linear infinite; }
+  .h06-trees-far { animation: h06drift 11s linear infinite; }
+  .h06-skyline { animation: h06drift 18s linear infinite; }
+  .h06-bob { animation: h06bob 2.6s ease-in-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .h06-wheel, .h06-road, .h06-road-slow, .h06-trees-near, .h06-trees-far, .h06-bob { animation: none; }
+    .h06-wheel, .h06-road, .h06-road-slow, .h06-trees-near, .h06-trees-far, .h06-skyline, .h06-bob { animation: none; }
   }
 </style>
 <defs>
@@ -41,6 +42,31 @@
   <g id="bush" stroke="currentColor" fill="none" stroke-linecap="round">
     <path d="M -26 0 Q -40 -4 -42 -20 Q -44 -38 -24 -42 Q -12 -52 6 -46 Q 26 -48 30 -30 Q 34 -12 16 -6 Q -2 2 -26 0 Z" stroke-width="2.6" fill="url(#hL)" fill-opacity="0.2"></path>
     <path d="M -22 -22 Q -10 -32 4 -24" stroke-width="2" opacity="0.7"></path>
+  </g>
+  <g id="bldg-tower" stroke="currentColor" fill="none" stroke-linecap="round">
+    <path d="M -44 0 L -46 -382 Q -46 -394 -34 -395 L 36 -397 Q 46 -396 46 -386 L 44 0" stroke-width="3.5"></path>
+    <path d="M -18 -397 L -18 -428 L 14 -429 L 15 -397 M -2 -429 L -3 -456" stroke-width="2.6"></path>
+    <path d="M -30 -352 L 30 -353 M -30 -308 L 30 -309 M -30 -264 L 30 -265 M -30 -220 L 30 -221 M -30 -176 L 30 -177 M -30 -132 L 30 -133 M -30 -88 L 30 -89 M -30 -44 L 30 -45" stroke-width="2" opacity="0.55"></path>
+    <path d="M -8 -352 L -8 -44 M 12 -352 L 12 -44" stroke-width="1.6" opacity="0.4"></path>
+  </g>
+  <g id="bldg-mid" stroke="currentColor" fill="none" stroke-linecap="round">
+    <path d="M -78 0 L -80 -212 Q -80 -222 -68 -223 L 66 -226 Q 78 -225 78 -214 L 76 0" stroke-width="3.2"></path>
+    <path d="M -62 -184 L 60 -186 M -62 -144 L 60 -146 M -62 -104 L 60 -106 M -62 -64 L 60 -66 M -62 -28 L 60 -30" stroke-width="2" opacity="0.55"></path>
+    <path d="M -26 -184 L -26 -28 M 22 -185 L 22 -29" stroke-width="1.6" opacity="0.4"></path>
+    <path d="M 40 -226 L 40 -244 L 62 -245 L 62 -226" stroke-width="2.4"></path>
+  </g>
+  <g id="bldg-step" stroke="currentColor" fill="none" stroke-linecap="round">
+    <path d="M -60 0 L -62 -160 L -20 -162 L -21 -300 Q -21 -310 -9 -311 L 42 -312 Q 52 -311 52 -302 L 50 0" stroke-width="3.2"></path>
+    <path d="M -4 -272 L 36 -273 M -4 -232 L 36 -233 M -4 -192 L 36 -193 M -46 -128 L 36 -130 M -46 -88 L 36 -90 M -46 -48 L 36 -50" stroke-width="2" opacity="0.55"></path>
+  </g>
+  <g id="skyband">
+    <use href="#bldg-tower" transform="translate(180,645)"></use>
+    <use href="#tree" transform="translate(345,648) scale(1.4)"></use>
+    <use href="#bldg-mid" transform="translate(560,645)"></use>
+    <use href="#bldg-step" transform="translate(830,645)"></use>
+    <use href="#tree" transform="translate(1000,648) scale(1.5)"></use>
+    <use href="#bldg-tower" transform="translate(1200,645) scale(0.85)"></use>
+    <use href="#bldg-mid" transform="translate(1450,645) scale(0.9)"></use>
   </g>
   <g id="treeband-far">
     <use href="#tree" transform="translate(280,652) scale(1.9)"></use>
@@ -69,6 +95,10 @@
   <line x1="420" y1="452" x2="420" y2="732" stroke-width="1.4"></line>
   <line x1="1150" y1="452" x2="1150" y2="732" stroke-width="1.4"></line>
   <line x1="60" y1="344" x2="1540" y2="330" stroke-width="1.4"></line>
+</g>
+<g class="h06-skyline" opacity="0.14">
+  <use href="#skyband"></use>
+  <use href="#skyband" transform="translate(-1600,0)"></use>
 </g>
 <g class="h06-trees-far" opacity="0.2">
   <use href="#treeband-far"></use>

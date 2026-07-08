@@ -1,8 +1,11 @@
 /**
- * H06 design-studio vehicle sketches (hand-drawn line art, default colour
- * #8FCF9D). One sketch per model; year variants share a drawing.
+ * H06 design-studio vehicle sketches (hand-drawn line art). Core fleet
+ * renders in showroom green (#8FCF9D); the VIP wing renders in champagne
+ * bronze (#D6B98C). Year variants share a drawing.
  */
 export const HERO_SKETCH = "/sketches/hero-gwagon.svg";
+
+export type SketchTint = "green" | "bronze";
 
 const SKETCH_BY_SLUG: Record<string, string> = {
   prado_2020: "/sketches/prado.svg",
@@ -23,6 +26,26 @@ const SKETCH_BY_SLUG: Record<string, string> = {
   luxury_bus: "/sketches/luxury-bus.svg",
 };
 
-export function sketchFor(slug: string): string | null {
-  return SKETCH_BY_SLUG[slug] ?? null;
+/** Slugs with a bronze variant on disk (the VIP wing). */
+const BRONZE_SLUGS = new Set([
+  "lx570",
+  "lx600",
+  "gwagon_2023",
+  "landcruiser_2022",
+  "landcruiser_2024",
+  "prado_2025",
+  "range_rover",
+  "rolls_royce",
+  "urus",
+  "armoured",
+  "luxury_bus",
+]);
+
+export function sketchFor(slug: string, tint: SketchTint = "green"): string | null {
+  const base = SKETCH_BY_SLUG[slug];
+  if (!base) return null;
+  if (tint === "bronze" && BRONZE_SLUGS.has(slug)) {
+    return base.replace(".svg", "-bronze.svg");
+  }
+  return base;
 }

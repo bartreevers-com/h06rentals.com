@@ -55,6 +55,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                 vehicleName={vehicle.name}
                 imageUrl={vehicle.imageUrl}
                 slug={vehicle.slug}
+                tint={isVip ? "bronze" : "green"}
               />
             ) : vehicle.gallery.length > 0 ? (
               <VehicleGallery images={vehicle.gallery} vehicleName={vehicle.name} />
@@ -65,6 +66,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                 vehicleName={vehicle.name}
                 imageUrl={vehicle.imageUrl}
                 slug={vehicle.slug}
+                tint={isVip ? "bronze" : "green"}
               />
             )}
           </Reveal>
