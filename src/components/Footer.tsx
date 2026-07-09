@@ -30,6 +30,7 @@ export function Footer() {
             <ul className="space-y-2.5 text-sm text-cream-dim">
               <li><Link href="/fleet" className="hover:text-cream">The Fleet</Link></li>
               <li><Link href="/vip" className="hover:text-cream">VIP Wing</Link></li>
+              <li><Link href="/chauffeur" className="hover:text-cream">Chauffeur Hire</Link></li>
               <li><Link href="/services" className="hover:text-cream">Services</Link></li>
               <li><Link href="/corporate" className="hover:text-cream">Corporate Accounts</Link></li>
             </ul>

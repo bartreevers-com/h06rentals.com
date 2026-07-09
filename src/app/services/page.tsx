@@ -43,7 +43,7 @@ const SERVICES = [
   {
     title: "Chauffeur Only",
     body: "Your vehicle, our professional. Vetted chauffeurs — regular or security-trained — for Lagos or interstate.",
-    cta: { label: "Hire a chauffeur", href: "/book?trip=interstate_chauffeur" },
+    cta: { label: "Explore chauffeur hire", href: "/chauffeur" },
   },
   {
     title: "Concierge & Custom",

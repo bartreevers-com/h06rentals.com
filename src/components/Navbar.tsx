@@ -9,6 +9,7 @@ import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 const LINKS = [
   { href: "/fleet", label: "The Fleet" },
   { href: "/vip", label: "VIP Wing" },
+  { href: "/chauffeur", label: "Chauffeur" },
   { href: "/services", label: "Services" },
   { href: "/corporate", label: "Corporate" },
   { href: "/contact", label: "Contact" },
