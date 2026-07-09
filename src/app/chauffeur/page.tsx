@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   title: "Chauffeur Hire — Our Driver, Your Vehicle, Lagos & Interstate",
   description:
     "Hire a vetted professional H06 chauffeur for your own vehicle from ₦50,000. Regular and security-trained spy police drivers, Lagos or interstate, 12-hour and 24-hour hire.",
+  openGraph: {
+    title: "H06 Chauffeur Hire — Our Driver, Your Vehicle",
+    description:
+      "Vetted professional chauffeurs for your own car, Lagos or interstate, from ₦50,000.",
+    images: ["/images/chauffeur-lagos.webp"],
+  },
 };
 
 const VETTING_REGULAR = [

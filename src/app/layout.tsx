@@ -39,6 +39,13 @@ export const metadata: Metadata = {
       "A private showroom for Lagos luxury mobility. Explore the fleet, build your trip, pay securely, and let the concierge handle the rest.",
     images: ["/images/hero-lagos-bridge.webp"],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "H06 Rentals — Luxury Car Hire & Chauffeur Service in Lagos",
+    description:
+      "A private showroom for Lagos luxury mobility. Explore the fleet, build your trip, pay securely.",
+    images: ["/images/hero-lagos-bridge.webp"],
+  },
   icons: {
     icon: [
       { url: "/brand/icon-32.png", sizes: "32x32", type: "image/png" },

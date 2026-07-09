@@ -18,9 +18,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const vehicle = await getVehicle(slug);
   if (!vehicle) return { title: "Vehicle not found" };
+  const title = `${vehicle.name} — Chauffeur-Driven Hire, Lagos`;
+  const description = `${vehicle.tagline}. Book the ${vehicle.name} with a professional H06 chauffeur in Lagos.`;
+  // share previews show this exact car: studio photo when we have one
+  const image = vehicle.gallery[0]?.src ?? "/images/hero-lagos-bridge.webp";
   return {
-    title: `${vehicle.name} — Chauffeur-Driven Hire, Lagos`,
-    description: `${vehicle.tagline}. Book the ${vehicle.name} with a professional H06 chauffeur in Lagos.`,
+    title,
+    description,
+    openGraph: { title, description, images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
