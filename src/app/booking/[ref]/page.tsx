@@ -165,6 +165,18 @@ export default async function BookingPage({
         <p className="text-center text-xs text-muted">
           The message is pre-filled with every detail — nothing to retype.
         </p>
+        <p className="mt-3 text-center text-xs text-muted">
+          While you wait —{" "}
+          <a
+            href="https://www.instagram.com/h06rentals"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cream-dim underline decoration-emerald-glow/40 underline-offset-2 hover:text-cream"
+          >
+            follow @h06rentals on Instagram
+          </a>{" "}
+          for the fleet in motion.
+        </p>
         <Link href="/" className="btn btn-ghost btn-md mx-auto mt-2">
           Back to the showroom
         </Link>

@@ -150,6 +150,51 @@ export default async function HomePage() {
         </Reveal>
       </section>
 
+      {/* ── Chauffeur hire ──────────────────────────────────────── */}
+      <section className="mx-auto max-w-7xl px-5 py-14 lg:px-8">
+        <Reveal>
+          <div className="glass-silver relative overflow-hidden p-8 md:p-12">
+            <div
+              className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 opacity-[0.12]"
+              style={{
+                backgroundImage: "url(/brand/mark-silver.png)",
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+              }}
+            />
+            <div className="grid items-center gap-8 md:grid-cols-[1.4fr_1fr]">
+              <div>
+                <p className="eyebrow eyebrow-silver mb-4">Chauffeur hire</p>
+                <h2 className="display text-3xl text-cream md:text-4xl max-w-lg">
+                  Our driver. Your vehicle.
+                </h2>
+                <p className="mt-4 max-w-xl text-sm leading-relaxed text-cream-dim">
+                  Vetted professional chauffeurs for your own car — regular or security-trained —
+                  from {formatNaira(50000)}. Lagos commutes, corporate transfers, interstate journeys.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <Link href="/chauffeur" className="btn btn-ghost btn-md">
+                    Explore chauffeur hire
+                  </Link>
+                  <Link href="/book?trip=interstate_chauffeur" className="btn btn-primary btn-md">
+                    Hire a chauffeur
+                  </Link>
+                </div>
+              </div>
+              <div className="hidden md:block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/sketches/chauffeur-greeting.svg"
+                  alt="Sketch of an H06 chauffeur greeting you beside a luxury SUV"
+                  className="w-full"
+                  draggable={false}
+                />
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* ── Why H06 ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-5 py-14 lg:px-8">
         <Reveal>
@@ -255,14 +300,30 @@ export default async function HomePage() {
             <p className="max-w-md text-sm text-muted">
               Availability, custom itineraries, corporate accounts — one message, answered fast.
             </p>
-            <a
-              href={waLink(WA_PRESETS.concierge)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-whatsapp btn-lg"
-            >
-              WhatsApp the concierge
-            </a>
+            <div className="flex flex-wrap justify-center gap-4">
+              <a
+                href={waLink(WA_PRESETS.concierge)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-whatsapp btn-lg"
+              >
+                WhatsApp the concierge
+              </a>
+              <a
+                href="https://www.instagram.com/h06rentals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-lg"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                  <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
+                  <circle cx="12" cy="12" r="4.5" />
+                  <circle cx="17.6" cy="6.4" r="1.2" fill="currentColor" stroke="none" />
+                </svg>
+                Follow @h06rentals
+              </a>
+            </div>
+            <p className="text-xs text-muted">The fleet, in motion — on Instagram.</p>
           </div>
         </Reveal>
       </section>
