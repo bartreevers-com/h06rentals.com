@@ -4,7 +4,7 @@ import Script from "next/script";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { StickyMobileCTA } from "@/components/StickyMobileCTA";
-import { ShowroomEntry } from "@/components/ShowroomEntry";
+import { Splash } from "@/components/Splash";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -96,6 +96,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className="min-h-screen antialiased">
         <script
+          // decide before first paint whether the splash shows — no content flash
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(!sessionStorage.getItem('h06_splash_seen'))document.documentElement.setAttribute('data-h06-splash','1')}catch(e){}",
+          }}
+        />
+        <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
         />
@@ -107,7 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Script>
           </>
         )}
-        <ShowroomEntry />
+        <Splash />
         <Navbar />
         <main className="pb-20 lg:pb-0">{children}</main>
         <Footer />
