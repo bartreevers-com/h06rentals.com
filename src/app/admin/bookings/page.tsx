@@ -7,8 +7,15 @@ import { formatNaira } from "@/lib/quote";
 import { listBookings } from "@/lib/repo";
 import { bookingStats } from "@/lib/payments";
 import { getTripType } from "@/lib/trip-types";
+import Link from "next/link";
 import { adminFollowUpMessage, customerWaLink } from "@/lib/whatsapp";
-import { assignDriverAction, saveAdminNotesAction, setBookingStatusAction } from "../actions";
+import {
+  assignDriverAction,
+  deleteBookingAction,
+  saveAdminNotesAction,
+  setBookingPriceAction,
+  setBookingStatusAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +27,17 @@ const STATUS_TONE: Record<string, string> = {
   cancelled: "border-red-400/40 text-red-300",
 };
 
-export default async function AdminBookings() {
+export default async function AdminBookings({
+  searchParams,
+}: {
+  searchParams: Promise<{ created?: string }>;
+}) {
   const session = await hasRole("owner", "admin", "sales");
   if (!session) redirect("/admin");
+  const { created } = await searchParams;
+  const canExport = session.role === "owner" || session.role === "admin";
+  const canPrice = canExport;
+  const canDelete = session.role === "owner";
   const db = await getDb();
   const [rows, stats, drivers] = await Promise.all([
     listBookings(),
@@ -44,7 +59,26 @@ export default async function AdminBookings() {
             {stats.count} total · {formatNaira(Number(stats.revenue))} collected
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {canExport && (
+            <>
+              <a href="/admin/export/bookings" className="btn btn-ghost btn-sm" download>Bookings CSV</a>
+              <a href="/admin/export/payments" className="btn btn-ghost btn-sm" download>Payments CSV</a>
+              <a href="/admin/export/emails" className="btn btn-ghost btn-sm" download>Email list CSV</a>
+            </>
+          )}
+          <Link href="/admin/bookings/new" className="btn btn-primary btn-sm">
+            + New phone-in booking
+          </Link>
+        </div>
       </div>
+
+      {created && (
+        <p className="glass-subtle mt-4 !border-emerald-glow/40 p-3 text-sm text-emerald-glow">
+          Booking {created} created — the client has been emailed their booking details
+          {" "}and payment link.
+        </p>
+      )}
 
       {rows.length === 0 ? (
         <div className="glass-subtle mt-8 p-10 text-center text-sm text-muted">
@@ -98,6 +132,30 @@ export default async function AdminBookings() {
                     {b.isEstimate && <p className="text-cream-dim">Contains estimated items — confirm final price</p>}
                     {b.notes && <p className="sm:col-span-2 lg:col-span-3"><span className="text-muted">Customer notes:</span> <span className="text-cream">{b.notes}</span></p>}
                   </div>
+
+                  {canPrice && (b.isEstimate || b.quoteTotal === 0) && (
+                    <form
+                      action={setBookingPriceAction}
+                      className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-champagne/30 bg-ink/40 p-3"
+                    >
+                      <input type="hidden" name="id" value={b.id} />
+                      <span className="text-xs uppercase tracking-wider text-champagne">
+                        Concierge pricing
+                      </span>
+                      <input
+                        name="finalPrice"
+                        type="number"
+                        min={1000}
+                        step={500}
+                        placeholder="Final price (₦)"
+                        className="field !w-44 !py-1.5 text-sm"
+                        required
+                      />
+                      <button className="btn btn-primary btn-sm">
+                        Set price &amp; email payment link
+                      </button>
+                    </form>
+                  )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <form action={assignDriverAction} className="flex items-center gap-2">
@@ -153,6 +211,23 @@ export default async function AdminBookings() {
                     />
                     <button className="btn btn-ghost btn-sm shrink-0">Save note</button>
                   </form>
+
+                  {canDelete && (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer text-xs text-muted hover:text-red-300">
+                        Delete this record (owner only)
+                      </summary>
+                      <form action={deleteBookingAction} className="mt-2 flex items-center gap-3">
+                        <input type="hidden" name="id" value={b.id} />
+                        <span className="text-xs text-red-300">
+                          Permanently removes {b.ref} and its payment records. Prefer Cancel to keep the history.
+                        </span>
+                        <button className="btn btn-ghost btn-sm !border-red-400/40 !text-red-300 shrink-0">
+                          Delete permanently
+                        </button>
+                      </form>
+                    </details>
+                  )}
                 </div>
               </details>
             );

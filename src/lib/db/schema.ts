@@ -170,6 +170,17 @@ export const staffUsers = pgTable("staff_users", {
 
 export type StaffUser = typeof staffUsers.$inferSelect;
 
+/** Marketing/notification list — every customer who books or enquires,
+ *  whether or not their payment succeeded. */
+export const emailList = pgTable("email_list", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  phone: text("phone"),
+  source: text("source").notNull().default("booking"), // booking | admin_booking | enquiry
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type Vehicle = typeof vehicles.$inferSelect;
 export type VehicleRate = typeof vehicleRates.$inferSelect;
 export type AddOn = typeof addOns.$inferSelect;

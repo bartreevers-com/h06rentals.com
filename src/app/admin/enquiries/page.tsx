@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { hasRole } from "@/lib/admin-auth";
 import { listEnquiries } from "@/lib/repo";
 import { customerWaLink } from "@/lib/whatsapp";
-import { setEnquiryStatusAction } from "../actions";
+import { deleteEnquiryAction, setEnquiryStatusAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +13,20 @@ const TONE: Record<string, string> = {
 };
 
 export default async function AdminEnquiries() {
-  if (!(await hasRole("owner", "admin", "sales"))) redirect("/admin");
+  const session = await hasRole("owner", "admin", "sales");
+  if (!session) redirect("/admin");
   const rows = await listEnquiries();
 
   return (
     <div>
-      <h1 className="display text-2xl text-cream">Enquiries</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="display text-2xl text-cream">Enquiries</h1>
+        {(session.role === "owner" || session.role === "admin") && (
+          <a href="/admin/export/enquiries" className="btn btn-ghost btn-sm" download>
+            Enquiries CSV
+          </a>
+        )}
+      </div>
       <p className="mt-1 text-sm text-muted">VIP requests, corporate accounts and contact messages.</p>
 
       {rows.length === 0 ? (
@@ -57,6 +65,14 @@ export default async function AdminEnquiries() {
                     </button>
                   </form>
                 ))}
+                {session.role === "owner" && (
+                  <form action={deleteEnquiryAction}>
+                    <input type="hidden" name="id" value={e.id} />
+                    <button className="btn btn-ghost btn-sm !border-red-400/40 !text-red-300">
+                      Delete
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           ))}

@@ -37,7 +37,7 @@ interface FormState {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
-  paymentOption: "full" | "deposit" | "bank_transfer" | "pay_later";
+  paymentOption: "full" | "deposit" | "pay_later";
 }
 
 const STEPS = ["Trip", "Details", "Vehicle", "Confirm"] as const;
@@ -620,18 +620,15 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                       </>
                     )}
                     <PaymentOption
-                      selected={form.paymentOption === "bank_transfer"}
-                      onClick={() => set("paymentOption", "bank_transfer")}
-                      title="Direct bank transfer"
-                      note="Account details shared by the concierge on WhatsApp"
-                    />
-                    <PaymentOption
                       selected={form.paymentOption === "pay_later"}
                       onClick={() => set("paymentOption", "pay_later")}
                       title="Confirm first, pay later"
-                      note="The concierge confirms availability before any payment"
+                      note="The concierge confirms availability, then emails your secure payment link"
                     />
                   </div>
+                  <p className="mt-3 text-xs text-muted">
+                    All payments run through secure Paystack checkout — card, bank transfer or USSD.
+                  </p>
                   {quote.isEstimate && (
                     <p className="mt-3 rounded-lg border border-cream/20 bg-ink/40 p-3 text-xs leading-relaxed text-cream-dim">
                       Part of this trip is an estimated quote. Final confirmation by H06 concierge —

@@ -4,7 +4,13 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
-import { addOns, bookings, enquiries, staffUsers, vehicleRates, vehicles } from "@/lib/db/schema";
+import { addOns, bookings, enquiries, payments, staffUsers, vehicleRates, vehicles } from "@/lib/db/schema";
+import { createBookingRecord } from "@/lib/booking-service";
+import {
+  emailBookingCancelled,
+  emailBookingConfirmed,
+  emailBookingPriced,
+} from "@/lib/notifications";
 import {
   adminPassword,
   createSession,
@@ -63,8 +69,115 @@ export async function setBookingStatusAction(formData: FormData) {
   const allowed = ["pending_payment", "pending_confirmation", "confirmed", "completed", "cancelled"];
   if (!id || !allowed.includes(status)) return;
   const db = await getDb();
-  await db.update(bookings).set({ status, updatedAt: new Date() }).where(eq(bookings.id, id));
+  const [updated] = await db
+    .update(bookings)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(bookings.id, id))
+    .returning();
+  // the customer always hears about status changes that matter to them
+  if (updated) {
+    if (status === "confirmed") await emailBookingConfirmed(updated);
+    if (status === "cancelled") await emailBookingCancelled(updated);
+  }
   revalidatePath("/admin/bookings");
+}
+
+/** Owner/admin set the final price on concierge-quoted (VIP, wedding,
+ *  custom) bookings — the customer immediately receives a payment link. */
+export async function setBookingPriceAction(formData: FormData) {
+  await requireRole("owner", "admin");
+  const id = Number(formData.get("id"));
+  const price = Math.round(Number(formData.get("finalPrice")));
+  if (!id || !Number.isFinite(price) || price <= 0) return;
+  const db = await getDb();
+  const rows = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+  const b = rows[0];
+  if (!b) return;
+  const [updated] = await db
+    .update(bookings)
+    .set({
+      quoteTotal: price,
+      amountDue: price,
+      isEstimate: false,
+      quoteBreakdown: [{ label: "Concierge-confirmed price", amountNgn: price }],
+      status: b.status === "pending_confirmation" || b.status === "pending_payment" ? "pending_payment" : b.status,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookings.id, id))
+    .returning();
+  if (updated) await emailBookingPriced(updated);
+  revalidatePath("/admin/bookings");
+}
+
+/** Staff create a booking for a client who called in — the client gets the
+ *  same emails and payment link as a web booking. */
+export async function createAdminBookingAction(
+  _prev: { error?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string }> {
+  const session = await requireRole("owner", "admin", "sales");
+  const str = (k: string) => String(formData.get(k) ?? "").trim();
+  const num = (k: string, fallback: number) => {
+    const n = Number(formData.get(k));
+    return Number.isFinite(n) && n > 0 ? Math.round(n) : fallback;
+  };
+
+  if (str("customerName").length < 2) return { error: "Customer name is required" };
+  if (str("customerPhone").length < 7) return { error: "Customer phone is required" };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(str("customerEmail")))
+    return { error: "A valid customer email is required — it's where their notifications go" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str("pickupDate"))) return { error: "Pickup date is required" };
+  if (!/^\d{2}:\d{2}$/.test(str("pickupTime"))) return { error: "Pickup time is required" };
+  if (str("pickupLocation").length < 2) return { error: "Pickup location is required" };
+
+  const result = await createBookingRecord(
+    {
+      tripType: str("tripType"),
+      vehicleSlug: str("vehicleSlug") || undefined,
+      chauffeurTier: str("chauffeurTier") || undefined,
+      pickupLocation: str("pickupLocation"),
+      destination: str("destination") || undefined,
+      destinationState: str("destinationState") || undefined,
+      pickupDate: str("pickupDate"),
+      pickupTime: str("pickupTime"),
+      numDays: num("numDays", 1),
+      passengers: num("passengers", 1),
+      luggage: Math.max(0, Math.round(Number(formData.get("luggage")) || 0)),
+      flightNumber: str("flightNumber") || undefined,
+      notes: str("notes") ? `[Phone-in booking] ${str("notes")}` : "[Phone-in booking]",
+      addOnSlugs: [],
+      customerName: str("customerName"),
+      customerPhone: str("customerPhone"),
+      customerEmail: str("customerEmail"),
+      paymentOption: str("paymentOption") === "deposit" ? "deposit" : str("paymentOption") === "full" ? "full" : "pay_later",
+    },
+    { source: "admin", createdBy: session.name },
+  );
+
+  if (result.error !== undefined) return { error: result.error };
+  revalidatePath("/admin/bookings");
+  redirect(`/admin/bookings?created=${result.booking.ref}`);
+}
+
+/** Deleting records is the owner's privilege alone. */
+export async function deleteBookingAction(formData: FormData) {
+  await requireRole("owner");
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const db = await getDb();
+  await db.delete(payments).where(eq(payments.bookingId, id));
+  await db.delete(bookings).where(eq(bookings.id, id));
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/trips");
+}
+
+export async function deleteEnquiryAction(formData: FormData) {
+  await requireRole("owner");
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const db = await getDb();
+  await db.delete(enquiries).where(eq(enquiries.id, id));
+  revalidatePath("/admin/enquiries");
 }
 
 export async function saveAdminNotesAction(formData: FormData) {

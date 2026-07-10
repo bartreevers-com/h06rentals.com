@@ -188,4 +188,12 @@ CREATE TABLE IF NOT EXISTS staff_users (
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS assigned_driver_id INTEGER;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS trip_started_at TIMESTAMP;
 ALTER TABLE bookings ADD COLUMN IF NOT EXISTS trip_completed_at TIMESTAMP;
+CREATE TABLE IF NOT EXISTS email_list (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT,
+  phone TEXT,
+  source TEXT NOT NULL DEFAULT 'booking',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 `;

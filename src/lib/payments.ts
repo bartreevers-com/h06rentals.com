@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { getDb } from "./db";
 import { bookings, payments } from "./db/schema";
 import { sendEmail } from "./email";
+import { emailPaymentFailed } from "./notifications";
 import { formatNaira } from "./quote";
 
 /**
@@ -74,6 +75,10 @@ export async function settlePayment(opts: {
       subject: `Payment ${formatNaira(credited)} received — ${booking.ref}`,
       text: `Booking ${booking.ref} (${booking.customerName}, ${booking.customerPhone}) paid ${formatNaira(credited)} via ${payment.provider}. Total paid: ${formatNaira(newPaid)} of ${formatNaira(booking.amountDue)}.`,
     });
+  }
+
+  if (opts.outcome === "failed") {
+    await emailPaymentFailed(booking, opts.amountNgn ?? payment.amountNgn);
   }
 
   return { bookingRef: booking.ref, applied: true };
