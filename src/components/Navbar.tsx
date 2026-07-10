@@ -34,7 +34,7 @@ export function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        scrolled || open ? "glass-subtle !rounded-none border-x-0 border-t-0" : "bg-transparent"
+        scrolled || open ? "glass-subtle nav-scrim !rounded-none border-x-0 border-t-0" : "bg-transparent"
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 lg:px-8">

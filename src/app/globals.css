@@ -365,6 +365,12 @@ html[data-h06-splash="1"] .h06-splash {
   .h06-splash-word { animation: h06-rise 0.4s ease both; }
 }
 
+/* scrolled navbar: near-opaque so content never reads through it,
+   with or without backdrop-filter support */
+.nav-scrim {
+  background: linear-gradient(180deg, rgba(11, 16, 13, 0.97), rgba(11, 16, 13, 0.92)) !important;
+}
+
 /* the glass mark, at rest in the page — a slow breath and a deep glow */
 .h06-glass-breathe {
   filter: drop-shadow(0 18px 44px rgba(30, 92, 69, 0.5));
