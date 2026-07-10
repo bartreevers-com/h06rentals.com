@@ -58,11 +58,19 @@ export default async function BookingPage({
   return (
     <div className="mx-auto max-w-3xl px-5 pb-24 pt-28 lg:px-0">
       <div className="flex flex-col items-center text-center">
-        <Mark
-          variant={celebration && isVip ? "bronze" : celebration ? "emerald" : "silver"}
-          size={72}
-          className={celebration ? "mark-pulse" : ""}
-        />
+        {celebration ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={isVip ? "/brand/render-bronze-alpha.png" : "/brand/render-emerald-alpha.png"}
+            alt=""
+            width={86}
+            height={92}
+            className="mark-pulse object-contain drop-shadow-[0_14px_36px_rgba(30,92,69,0.45)]"
+            draggable={false}
+          />
+        ) : (
+          <Mark variant="silver" size={72} />
+        )}
         <p className={`eyebrow mt-6 ${celebration && isVip ? "eyebrow-bronze" : "eyebrow-emerald"}`}>
           Booking {booking.ref}
         </p>

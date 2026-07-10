@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeroStage } from "@/components/HeroStage";
-import { Mark } from "@/components/Logo";
 import { Reveal } from "@/components/Reveal";
 import { VehicleCard } from "@/components/VehicleCard";
 import { formatNaira } from "@/lib/quote";
@@ -293,7 +292,15 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-5 pb-20 pt-8 lg:px-8">
         <Reveal>
           <div className="flex flex-col items-center gap-6 text-center">
-            <Mark variant="emerald" size={64} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/render-emerald-alpha.png"
+              alt=""
+              width={96}
+              height={102}
+              className="h06-glass-breathe object-contain"
+              draggable={false}
+            />
             <h2 className="display max-w-xl text-3xl text-cream md:text-4xl">
               Prefer a human? The concierge is awake.
             </h2>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mark } from "@/components/Logo";
 import { getSession } from "@/lib/admin-auth";
 import { logoutAction } from "./actions";
 
@@ -35,7 +34,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b hairline">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <div className="flex items-center gap-3">
-            <Mark variant="silver" size={26} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/render-glass-alpha.png"
+              alt=""
+              width={26}
+              height={28}
+              className="object-contain drop-shadow-[0_2px_8px_rgba(201,205,209,0.25)]"
+              draggable={false}
+            />
             <span className="text-xs font-semibold uppercase tracking-[0.28em] text-cream-dim">
               H06 Operations
             </span>
