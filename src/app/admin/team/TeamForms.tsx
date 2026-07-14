@@ -22,9 +22,11 @@ export function CreateStaffForm() {
       <div>
         <label className="field-label" htmlFor="staff-role">Role</label>
         <select id="staff-role" name="role" className="field" defaultValue="sales">
-          <option value="admin">Admin — full access</option>
+          <option value="admin">Admin — full access (except Team &amp; Performance)</option>
           <option value="sales">Sales — bookings &amp; enquiries</option>
           <option value="driver">Driver — assigned trips only</option>
+          <option value="hr">HR — performance tracking only</option>
+          <option value="staff">Staff — tracked for performance, no sign-in</option>
         </select>
       </div>
       <div>

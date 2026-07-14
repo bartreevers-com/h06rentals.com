@@ -4,7 +4,18 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/db";
-import { addOns, bookings, enquiries, payments, staffUsers, vehicleRates, vehicles } from "@/lib/db/schema";
+import {
+  addOns,
+  bookings,
+  enquiries,
+  kpis,
+  kpiScores,
+  payments,
+  staffUsers,
+  vehicleRates,
+  vehicles,
+} from "@/lib/db/schema";
+import { KPI_TEMPLATES } from "@/lib/kpi-templates";
 import { createBookingRecord } from "@/lib/booking-service";
 import {
   emailBookingCancelled,
@@ -47,9 +58,11 @@ export async function loginAction(_prev: { error?: string } | null, formData: Fo
       .where(eq(staffUsers.phone, identifier))
       .limit(1);
     const user = rows[0];
-    if (user && user.isActive && verifyPassword(password, user.passwordHash)) {
+    if (user && user.isActive && user.role !== "staff" && verifyPassword(password, user.passwordHash)) {
       await createSession({ userId: user.id, role: user.role as StaffRole, name: user.name });
-      redirect(user.role === "driver" ? "/admin/trips" : "/admin/bookings");
+      redirect(
+        user.role === "driver" ? "/admin/trips" : user.role === "hr" ? "/admin/performance" : "/admin/bookings",
+      );
     }
   }
   return { error: "Incorrect phone number or password" };
@@ -346,8 +359,8 @@ export async function createStaffAction(_prev: { error?: string; ok?: string } |
   const password = String(formData.get("password") ?? "");
   if (name.length < 2) return { error: "Please add a name" };
   if (phone.length < 7) return { error: "Please add a phone number — it's their login" };
-  if (!["admin", "sales", "driver"].includes(role)) return { error: "Choose a role" };
-  if (password.length < 8) return { error: "Password must be at least 8 characters" };
+  if (!["admin", "sales", "driver", "hr", "staff"].includes(role)) return { error: "Choose a role" };
+  if (role !== "staff" && password.length < 8) return { error: "Password must be at least 8 characters" };
   const db = await getDb();
   const existing = await db.select().from(staffUsers).where(eq(staffUsers.phone, phone)).limit(1);
   if (existing[0]) return { error: "That phone number already has an account" };
@@ -356,7 +369,8 @@ export async function createStaffAction(_prev: { error?: string; ok?: string } |
     phone,
     email: email || null,
     role,
-    passwordHash: hashPassword(password),
+    // tracked-only staff never sign in; give them an unusable random password
+    passwordHash: hashPassword(role === "staff" && !password ? crypto.randomUUID() : password),
   });
   revalidatePath("/admin/team");
   return { ok: `${name} added — they sign in with ${phone} and the password you set` };
@@ -372,6 +386,97 @@ export async function toggleStaffAction(formData: FormData) {
   if (!user) return;
   await db.update(staffUsers).set({ isActive: !user.isActive }).where(eq(staffUsers.id, id));
   revalidatePath("/admin/team");
+}
+
+/* ── performance (owner + HR only) ───────────────────────────── */
+
+async function requirePerf() {
+  return requireRole("owner", "hr");
+}
+
+export async function createKpiAction(formData: FormData) {
+  await requirePerf();
+  const staffId = Number(formData.get("staffId"));
+  const title = String(formData.get("title") ?? "").trim();
+  const cadence = String(formData.get("cadence")) === "daily" ? "daily" : "weekly";
+  const target = Math.max(1, Math.round(Number(formData.get("target")) || 1));
+  const weight = Math.min(5, Math.max(1, Math.round(Number(formData.get("weight")) || 3)));
+  if (!staffId || title.length < 3) return;
+  const db = await getDb();
+  await db.insert(kpis).values({ staffId, title, cadence, target, weight });
+  revalidatePath("/admin/performance");
+}
+
+export async function applyKpiTemplateAction(formData: FormData) {
+  await requirePerf();
+  const staffId = Number(formData.get("staffId"));
+  const templateKey = String(formData.get("template"));
+  const template = KPI_TEMPLATES[templateKey];
+  if (!staffId || !template) return;
+  const db = await getDb();
+  const existing = await db.select().from(kpis).where(eq(kpis.staffId, staffId));
+  const have = new Set(existing.map((k) => k.title.toLowerCase()));
+  for (const t of template.kpis) {
+    if (!have.has(t.title.toLowerCase())) {
+      await db.insert(kpis).values({ staffId, ...t });
+    }
+  }
+  revalidatePath("/admin/performance");
+}
+
+export async function toggleKpiAction(formData: FormData) {
+  await requirePerf();
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const db = await getDb();
+  const rows = await db.select().from(kpis).where(eq(kpis.id, id)).limit(1);
+  if (!rows[0]) return;
+  await db.update(kpis).set({ isActive: !rows[0].isActive }).where(eq(kpis.id, id));
+  revalidatePath("/admin/performance");
+}
+
+/** Deleting a KPI (and its history) stays with the owner. */
+export async function deleteKpiAction(formData: FormData) {
+  await requireRole("owner");
+  const id = Number(formData.get("id"));
+  if (!id) return;
+  const db = await getDb();
+  await db.delete(kpiScores).where(eq(kpiScores.kpiId, id));
+  await db.delete(kpis).where(eq(kpis.id, id));
+  revalidatePath("/admin/performance");
+}
+
+/** HR records the numbers for one KPI across a week — upserts per period. */
+export async function recordScoresAction(formData: FormData) {
+  const session = await requirePerf();
+  const kpiId = Number(formData.get("kpiId"));
+  if (!kpiId) return;
+  const db = await getDb();
+  const kpiRows = await db.select().from(kpis).where(eq(kpis.id, kpiId)).limit(1);
+  if (!kpiRows[0]) return;
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  const entries: { periodDate: string; achieved: number }[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("achieved:")) continue;
+    const periodDate = key.slice("achieved:".length);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(periodDate)) continue;
+    const raw = String(value).trim();
+    if (raw === "") continue; // untouched day — leave unscored
+    const achieved = Math.max(0, Math.round(Number(raw)));
+    if (!Number.isFinite(achieved)) continue;
+    entries.push({ periodDate, achieved });
+  }
+  for (const e of entries) {
+    await db
+      .insert(kpiScores)
+      .values({ kpiId, periodDate: e.periodDate, achieved: e.achieved, note, recordedBy: session.name })
+      .onConflictDoUpdate({
+        target: [kpiScores.kpiId, kpiScores.periodDate],
+        set: { achieved: e.achieved, note, recordedBy: session.name },
+      });
+  }
+  revalidatePath("/admin/performance");
 }
 
 export async function resetStaffPasswordAction(_prev: { error?: string; ok?: string } | null, formData: FormData) {

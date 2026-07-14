@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
-import { bookings, emailList, enquiries, payments } from "@/lib/db/schema";
+import { bookings, emailList, enquiries, kpis, kpiScores, payments, staffUsers } from "@/lib/db/schema";
 import { hasRole } from "@/lib/admin-auth";
 
-/** Records and analytics, downloadable as CSV (owner and admin). */
+/** Records and analytics, downloadable as CSV. Business records: owner and
+ *  admin. Performance report: owner and HR. */
 
 function csv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
@@ -18,10 +19,12 @@ function csv(rows: Record<string, unknown>[]): string {
 }
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ kind: string }> }) {
-  if (!(await hasRole("owner", "admin"))) {
+  const { kind } = await ctx.params;
+  const session =
+    kind === "performance" ? await hasRole("owner", "hr") : await hasRole("owner", "admin");
+  if (!session) {
     return NextResponse.json({ error: "Not authorised" }, { status: 403 });
   }
-  const { kind } = await ctx.params;
   const db = await getDb();
 
   let rows: Record<string, unknown>[] = [];
@@ -79,6 +82,31 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ kind: stri
       source: e.source,
       joined: e.createdAt?.toISOString(),
     }));
+  } else if (kind === "performance") {
+    const [allScores, allKpis, people] = await Promise.all([
+      db.select().from(kpiScores).orderBy(desc(kpiScores.periodDate)),
+      db.select().from(kpis),
+      db.select().from(staffUsers).where(eq(staffUsers.isActive, true)),
+    ]);
+    const kpiBy = new Map(allKpis.map((k) => [k.id, k]));
+    const staffBy = new Map(people.map((p) => [p.id, p]));
+    rows = allScores.map((s) => {
+      const k = kpiBy.get(s.kpiId);
+      const p = k ? staffBy.get(k.staffId) : undefined;
+      return {
+        period_date: s.periodDate,
+        staff: p?.name ?? k?.staffId,
+        role: p?.role,
+        kpi: k?.title,
+        cadence: k?.cadence,
+        target: k?.target,
+        weight: k?.weight,
+        achieved: s.achieved,
+        completion_pct: k ? Math.round(Math.min(1, s.achieved / Math.max(1, k.target)) * 100) : "",
+        note: s.note,
+        recorded_by: s.recordedBy,
+      };
+    });
   } else {
     return NextResponse.json({ error: "Unknown export" }, { status: 404 });
   }

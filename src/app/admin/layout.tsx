@@ -16,13 +16,18 @@ const OPS_TABS = [
 ];
 
 const TABS: Record<string, { href: string; label: string }[]> = {
-  owner: [...OPS_TABS, { href: "/admin/team", label: "Team" }],
+  owner: [
+    ...OPS_TABS,
+    { href: "/admin/performance", label: "Performance" },
+    { href: "/admin/team", label: "Team" },
+  ],
   admin: OPS_TABS,
   sales: [
     { href: "/admin/bookings", label: "Bookings" },
     { href: "/admin/enquiries", label: "Enquiries" },
   ],
   driver: [{ href: "/admin/trips", label: "My Trips" }],
+  hr: [{ href: "/admin/performance", label: "Performance" }],
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

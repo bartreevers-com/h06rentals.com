@@ -170,6 +170,34 @@ export const staffUsers = pgTable("staff_users", {
 
 export type StaffUser = typeof staffUsers.$inferSelect;
 
+/** KPIs assigned to a staff member by HR — daily or weekly, with a target
+ *  and a weight so important duties count more. */
+export const kpis = pgTable("kpis", {
+  id: serial("id").primaryKey(),
+  staffId: integer("staff_id").notNull(),
+  title: text("title").notNull(),
+  cadence: text("cadence").notNull(), // daily | weekly
+  target: integer("target").notNull().default(1),
+  weight: integer("weight").notNull().default(3), // 1-5
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Manual score entries by HR. periodDate = the day (daily KPIs) or the
+ *  week's Monday (weekly KPIs). One row per KPI per period. */
+export const kpiScores = pgTable("kpi_scores", {
+  id: serial("id").primaryKey(),
+  kpiId: integer("kpi_id").notNull(),
+  periodDate: text("period_date").notNull(), // YYYY-MM-DD
+  achieved: integer("achieved").notNull().default(0),
+  note: text("note"),
+  recordedBy: text("recorded_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type Kpi = typeof kpis.$inferSelect;
+export type KpiScore = typeof kpiScores.$inferSelect;
+
 /** Marketing/notification list — every customer who books or enquires,
  *  whether or not their payment succeeded. */
 export const emailList = pgTable("email_list", {
