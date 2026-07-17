@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { launched } from "@/lib/launch-gate";
-import { Countdown, CrewGate } from "./Countdown";
+import { CrewGate } from "./Countdown";
+import { RevealStage } from "./RevealStage";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,20 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Pre-launch landing page. The proxy routes all public traffic here until
- *  launch time, then steps aside automatically — no redeploy needed. */
-export default function ComingSoon() {
+/** Pre-launch landing in two acts: the veiled countdown until the unveiling
+ *  (Fri 6 PM WAT), then the mark springs in and the timer runs the final
+ *  24 hours to the reopening (Sat 6 PM WAT). The gate lifts itself. */
+export default async function ComingSoon({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
   if (launched()) redirect("/");
+  const { preview } = await searchParams;
+  const forcePhase =
+    preview === "veil" ? ("veil" as const) : preview === "revealed" ? ("revealed" as const) : undefined;
+
+  const revealAt = process.env.NEXT_PUBLIC_REVEAL_AT ?? "2026-07-17T18:00:00+01:00";
   const launchAt = process.env.NEXT_PUBLIC_LAUNCH_AT ?? "2026-07-18T18:00:00+01:00";
 
   return (
@@ -26,30 +37,7 @@ export default function ComingSoon() {
       <div className="h06-splash-swirl h06-splash-swirl-2 !opacity-30" />
 
       <div className="relative flex flex-col items-center text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/render-emerald-alpha.png"
-          alt="H06 Rentals"
-          className="h06-glass-breathe w-[min(48vw,240px)]"
-          draggable={false}
-        />
-
-        <p className="mt-10 text-sm font-semibold uppercase tracking-[0.5em] text-cream">
-          H06<span className="ml-3 font-normal text-cream-dim">Rentals</span>
-        </p>
-
-        <h1 className="display mt-6 max-w-xl text-3xl leading-snug text-cream md:text-4xl">
-          The showroom will be re&#8209;opened momentarily.
-        </h1>
-        <p className="mt-3 text-xs uppercase tracking-[0.3em] text-muted">
-          Lagos · Private luxury mobility
-        </p>
-
-        <Countdown launchAt={launchAt} />
-
-        <p className="mt-4 text-[0.65rem] uppercase tracking-[0.25em] text-muted">
-          Saturday 18 July · 6:00 PM WAT
-        </p>
+        <RevealStage revealAt={revealAt} launchAt={launchAt} forcePhase={forcePhase} />
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
