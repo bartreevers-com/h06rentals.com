@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * The two-act countdown.
@@ -45,6 +45,72 @@ export function RevealStage({
     }
   }, [launched]);
 
+  // ── the 6PM moment: lights on + confetti + mark, together ──
+  const confettiCanvas = useRef<HTMLCanvasElement | null>(null);
+  const confettiFired = useRef(false);
+  useEffect(() => {
+    if (!revealed || launched || confettiFired.current) return;
+    confettiFired.current = true;
+    const canvas = confettiCanvas.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const COLORS = ["#2E8B6A", "#3FAE85", "#D6B98C", "#C9CDD1", "#F2EFE8", "#1E5C45"];
+    interface P { x: number; y: number; vx: number; vy: number; w: number; h: number; rot: number; vr: number; color: string; drag: number; }
+    const parts: P[] = [];
+    const burst = (cx: number, cy: number, count: number, spread: number) => {
+      for (let i = 0; i < count; i++) {
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * spread;
+        const speed = 7 + Math.random() * 9;
+        parts.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          w: 5 + Math.random() * 6,
+          h: 8 + Math.random() * 8,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.35,
+          color: COLORS[Math.floor(Math.random() * COLORS.length)],
+          drag: 0.985 + Math.random() * 0.01,
+        });
+      }
+    };
+    burst(W * 0.5, H * 0.42, 90, 2.4);
+    burst(W * 0.12, H * 0.9, 45, 1.1);
+    burst(W * 0.88, H * 0.9, 45, 1.1);
+    const started = performance.now();
+    let raf = 0;
+    const tick = (t: number) => {
+      const elapsed = t - started;
+      ctx.clearRect(0, 0, W, H);
+      for (const p of parts) {
+        p.vy += 0.16;
+        p.vx *= p.drag;
+        p.vy *= p.drag;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = Math.max(0, 1 - elapsed / 5000);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (elapsed < 5200) raf = requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, W, H);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [revealed, launched]);
+
   const target = revealed ? launch : reveal;
   const remaining = now === null ? null : Math.max(0, target - now);
   const days = remaining === null ? 0 : Math.floor(remaining / 86400000);
@@ -61,6 +127,19 @@ export function RevealStage({
 
   return (
     <div className="relative flex flex-col items-center text-center">
+      {/* house lights: down during the veil, up at six */}
+      <motion.div
+        className="pointer-events-none fixed inset-0 z-[340] bg-black"
+        initial={false}
+        animate={{ opacity: revealed ? 0 : 0.52 }}
+        transition={{ duration: 1.6, ease: "easeInOut" }}
+        aria-hidden
+      />
+      <canvas
+        ref={confettiCanvas}
+        className="pointer-events-none fixed inset-0 z-[360] h-full w-full"
+        aria-hidden
+      />
       {/* ── the stage: veil or the mark ─────────────────────────── */}
       <div className="relative flex h-[min(52vw,260px)] w-[min(48vw,240px)] items-center justify-center">
         <AnimatePresence mode="wait">
