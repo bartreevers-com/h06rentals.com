@@ -9,11 +9,15 @@ import { useState } from "react";
  */
 export function SourceVehicleForm({ vehicleSlug, vehicleName }: { vehicleSlug: string; vehicleName: string }) {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
-  const [form, setForm] = useState({ name: "", phone: "", dates: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", dates: "" });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.name.trim().length < 2 || form.phone.trim().length < 7) {
+    if (
+      form.name.trim().length < 2 ||
+      form.phone.trim().length < 7 ||
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())
+    ) {
       setState("error");
       return;
     }
@@ -26,6 +30,7 @@ export function SourceVehicleForm({ vehicleSlug, vehicleName }: { vehicleSlug: s
           type: "sourcing",
           name: form.name.trim(),
           phone: form.phone.trim(),
+          email: form.email.trim(),
           vehicleSlug,
           message: `Wants the ${vehicleName} (currently unavailable).${form.dates ? ` Dates: ${form.dates}.` : ""} Source the same vehicle for this client.`,
         }),
@@ -66,13 +71,20 @@ export function SourceVehicleForm({ vehicleSlug, vehicleName }: { vehicleSlug: s
       />
       <input
         className="field"
+        type="email"
+        placeholder="Email address"
+        value={form.email}
+        onChange={(e) => setForm({ ...form, email: e.target.value })}
+      />
+      <input
+        className="field"
         placeholder="Dates you need it (optional)"
         value={form.dates}
         onChange={(e) => setForm({ ...form, dates: e.target.value })}
       />
       {state === "error" && (
         <p role="alert" className="text-xs text-red-300">
-          Please add your name and a valid phone number, then try again.
+          Please add your name, a valid phone number and email address, then try again.
         </p>
       )}
       <button className="btn btn-primary btn-md" disabled={state === "sending"}>

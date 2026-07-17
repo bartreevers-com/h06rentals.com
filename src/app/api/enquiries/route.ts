@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
-import { enquiries } from "@/lib/db/schema";
+import { emailList, enquiries } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 
 const EnquirySchema = z.object({
@@ -29,6 +29,21 @@ export async function POST(req: NextRequest) {
     vehicleSlug: input.vehicleSlug ?? null,
     message: input.message,
   });
+  // every prospect with an email joins the list
+  if (input.email) {
+    await db
+      .insert(emailList)
+      .values({
+        email: input.email.toLowerCase(),
+        name: input.name,
+        phone: input.phone,
+        source: "enquiry",
+      })
+      .onConflictDoUpdate({
+        target: emailList.email,
+        set: { name: input.name, phone: input.phone },
+      });
+  }
   await sendEmail({
     to: process.env.ADMIN_NOTIFY_EMAIL ?? "hello@h06rentals.com",
     subject:
