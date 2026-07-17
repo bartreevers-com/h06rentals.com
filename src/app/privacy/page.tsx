@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -28,7 +29,8 @@ const SECTIONS = [
   },
 ];
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  await launchGate();
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-28">
       <h1 className="display text-4xl text-cream">Privacy Policy</h1>

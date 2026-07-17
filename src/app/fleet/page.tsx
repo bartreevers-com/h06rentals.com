@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { VehicleCard } from "@/components/VehicleCard";
 import { formatNaira } from "@/lib/quote";
 import { listRates, listVehicles } from "@/lib/repo";
+import { getBusyMap } from "@/lib/availability";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function FleetPage() {
-  const [vehicles, rates] = await Promise.all([listVehicles({ tier: "core", includeUnavailable: true }), listRates()]);
+  await launchGate();
+  const [vehicles, rates, busyMap] = await Promise.all([
+    listVehicles({ tier: "core", includeUnavailable: true }),
+    listRates(),
+    getBusyMap(),
+  ]);
   const rateFor = (slug: string) => rates.find((r) => r.vehicleSlug === slug) ?? null;
 
   return (
@@ -31,7 +38,7 @@ export default async function FleetPage() {
       <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {vehicles.map((v, i) => (
           <Reveal key={v.slug} delay={i * 0.05}>
-            <VehicleCard vehicle={v} rate={rateFor(v.slug)} />
+            <VehicleCard vehicle={v} rate={rateFor(v.slug)} busyUntil={busyMap[v.slug]} />
           </Reveal>
         ))}
       </div>

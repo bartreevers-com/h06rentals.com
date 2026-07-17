@@ -1,10 +1,12 @@
 import Image from "next/image";
+import { launchGate } from "@/lib/launch-gate";
 import Link from "next/link";
 import { HeroStage } from "@/components/HeroStage";
 import { Reveal } from "@/components/Reveal";
 import { VehicleCard } from "@/components/VehicleCard";
 import { formatNaira } from "@/lib/quote";
 import { listRates, listVehicles } from "@/lib/repo";
+import { getBusyMap } from "@/lib/availability";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +21,8 @@ const TRIP_DOORS = [
 ];
 
 export default async function HomePage() {
-  const [vehicles, rates] = await Promise.all([listVehicles({ tier: "core" }), listRates()]);
+  await launchGate();
+  const [vehicles, rates, busyMap] = await Promise.all([listVehicles({ tier: "core" }), listRates(), getBusyMap()]);
   const vips = await listVehicles({ tier: "vip" });
   const rateFor = (slug: string) => rates.find((r) => r.vehicleSlug === slug) ?? null;
 
@@ -101,7 +104,7 @@ export default async function HomePage() {
         <div className="mt-9 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {vehicles.slice(0, 6).map((v, i) => (
             <Reveal key={v.slug} delay={i * 0.06}>
-              <VehicleCard vehicle={v} rate={rateFor(v.slug)} />
+              <VehicleCard vehicle={v} rate={rateFor(v.slug)} busyUntil={busyMap[v.slug]} />
             </Reveal>
           ))}
         </div>

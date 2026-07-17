@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
 
   const result = await createBookingRecord(parsed.data, { source: "web" });
   if (result.error !== undefined) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      { error: result.error, busyUntil: result.busyUntil, suggestion: result.suggestion },
+      { status: result.status },
+    );
   }
 
   const b = result.booking;

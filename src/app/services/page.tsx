@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
@@ -52,7 +53,8 @@ const SERVICES = [
   },
 ];
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  await launchGate();
   return (
     <div className="mx-auto max-w-7xl px-5 pb-20 pt-28 lg:px-8">
       <Reveal>

@@ -1,10 +1,11 @@
 import "server-only";
+import { findConflict, formatDay, getBusyMap, suggestAlternative, tripEnd } from "./availability";
 import { getDb } from "./db";
 import { bookings, emailList, type Booking } from "./db/schema";
 import { sendEmail } from "./email";
 import { emailBookingCreated } from "./notifications";
 import { computeQuote, formatNaira } from "./quote";
-import { getRate, getVehicle, listAddOns, listSurcharges, nextBookingRef } from "./repo";
+import { getRate, getVehicle, listAddOns, listRates, listSurcharges, listVehicles, nextBookingRef } from "./repo";
 import { getTripType } from "./trip-types";
 
 export interface BookingInput {
@@ -37,7 +38,16 @@ export interface BookingInput {
 export async function createBookingRecord(
   input: BookingInput,
   opts: { source: "web" | "admin"; createdBy?: string } = { source: "web" },
-): Promise<{ booking: Booking; error?: never } | { booking?: never; error: string; status: number }> {
+): Promise<
+  | { booking: Booking; error?: never }
+  | {
+      booking?: never;
+      error: string;
+      status: number;
+      busyUntil?: string;
+      suggestion?: { slug: string; name: string } | null;
+    }
+> {
   const trip = getTripType(input.tripType);
   if (!trip) return { error: "Unknown trip type", status: 400 };
 
@@ -54,6 +64,26 @@ export async function createBookingRecord(
       error: "This vehicle is currently unavailable — please choose another or contact the concierge",
       status: 409,
     };
+  }
+
+  // Date-aware availability: confirmed bookings block their trip window.
+  if (vehicle && opts.source === "web") {
+    const requestedEnd = tripEnd(input.pickupDate, input.numDays, input.returnDate ?? null);
+    const conflict = await findConflict(vehicle.slug, input.pickupDate, requestedEnd);
+    if (conflict) {
+      const [allVehicles, allRates, busyMap] = await Promise.all([
+        listVehicles({ tier: vehicle.tier as "core" | "vip" }),
+        listRates(),
+        getBusyMap(),
+      ]);
+      const alt = suggestAlternative(vehicle, allVehicles, allRates, busyMap);
+      return {
+        error: `${vehicle.name} is fully booked until ${formatDay(conflict.busyUntil)} for those dates.`,
+        status: 409,
+        busyUntil: conflict.busyUntil,
+        suggestion: alt ? { slug: alt.slug, name: alt.name } : null,
+      };
+    }
   }
 
   // Server-side quote — never trust the client's numbers.

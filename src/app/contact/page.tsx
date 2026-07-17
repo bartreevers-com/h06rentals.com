@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import { Reveal } from "@/components/Reveal";
 import { EnquiryForm } from "@/components/EnquiryForm";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
     "Reach the H06 concierge: WhatsApp +234 913 999 9533, hello@h06rentals.com, or visit 1 Gbangbala Street, Ikate, Lekki, Lagos. Available 24/7.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  await launchGate();
   return (
     <div className="mx-auto max-w-7xl px-5 pb-20 pt-28 lg:px-8">
       <div className="grid gap-12 lg:grid-cols-2">

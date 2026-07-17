@@ -5,7 +5,7 @@ import { enquiries } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
 
 const EnquirySchema = z.object({
-  type: z.enum(["vip", "corporate", "custom", "contact"]),
+  type: z.enum(["vip", "corporate", "custom", "contact", "sourcing"]),
   name: z.string().min(2).max(120),
   phone: z.string().min(7).max(20),
   email: z.string().email().optional().or(z.literal("")),
@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
   });
   await sendEmail({
     to: process.env.ADMIN_NOTIFY_EMAIL ?? "hello@h06rentals.com",
-    subject: `New ${input.type} enquiry — ${input.name}`,
+    subject:
+      input.type === "sourcing"
+        ? `SOURCING REQUEST — ${input.vehicleSlug ?? "vehicle"} for ${input.name} (act fast)`
+        : `New ${input.type} enquiry — ${input.name}`,
     text: `Name: ${input.name}\nPhone: ${input.phone}\nEmail: ${input.email || "—"}\nVehicle: ${input.vehicleSlug ?? "—"}\n\n${input.message}`,
   });
   return NextResponse.json({ ok: true });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import Image from "next/image";
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
@@ -71,7 +72,8 @@ const FAQ = [
   },
 ];
 
-export default function ChauffeurPage() {
+export default async function ChauffeurPage() {
+  await launchGate();
   return (
     <>
       {/* ── hero: the greeting sketch on the silver stage ───────── */}

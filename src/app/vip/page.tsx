@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import { Mark } from "@/components/Logo";
 import { Reveal } from "@/components/Reveal";
 import { VehicleCard } from "@/components/VehicleCard";
 import { listVehicles } from "@/lib/repo";
+import { getBusyMap } from "@/lib/availability";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +16,8 @@ export const metadata: Metadata = {
 };
 
 export default async function VipPage() {
-  const vehicles = await listVehicles({ tier: "vip", includeUnavailable: true });
+  await launchGate();
+  const [vehicles, busyMap] = await Promise.all([listVehicles({ tier: "vip", includeUnavailable: true }), getBusyMap()]);
 
   return (
     <div className="relative">
@@ -43,7 +46,7 @@ export default async function VipPage() {
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {vehicles.map((v, i) => (
             <Reveal key={v.slug} delay={i * 0.05}>
-              <VehicleCard vehicle={v} bronze />
+              <VehicleCard vehicle={v} bronze busyUntil={busyMap[v.slug]} />
             </Reveal>
           ))}
         </div>

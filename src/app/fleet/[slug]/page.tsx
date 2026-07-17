@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { Turntable360 } from "@/components/Turntable360";
 import { VehicleGallery } from "@/components/VehicleGallery";
 import { formatNaira } from "@/lib/quote";
-import { getRate, getVehicle, listVehicles } from "@/lib/repo";
+import { getRate, getVehicle, listRates, listVehicles } from "@/lib/repo";
+import { formatDay, getBusyMap, suggestAlternative } from "@/lib/availability";
+import { SourceVehicleForm } from "@/components/SourceVehicleForm";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 
 export const dynamic = "force-dynamic";
@@ -31,15 +34,25 @@ export async function generateMetadata({
 }
 
 export default async function VehiclePage({ params }: { params: Promise<{ slug: string }> }) {
+  await launchGate();
   const { slug } = await params;
   const vehicle = await getVehicle(slug);
   if (!vehicle) notFound();
-  const rate = await getRate(slug);
+  const [rate, allRates, busyMap, tierVehicles] = await Promise.all([
+    getRate(slug),
+    listRates(),
+    getBusyMap(),
+    listVehicles({ tier: vehicle.tier as "core" | "vip" }),
+  ]);
   const isVip = vehicle.tier === "vip";
 
-  const others = (await listVehicles({ tier: vehicle.tier as "core" | "vip" }))
-    .filter((v) => v.slug !== slug)
-    .slice(0, 3);
+  const busyUntil = busyMap[slug] ?? null;
+  const unavailable = Boolean(busyUntil) || !vehicle.isAvailable;
+  const suggestion = unavailable
+    ? suggestAlternative(vehicle, tierVehicles, allRates, busyMap)
+    : null;
+
+  const others = tierVehicles.filter((v) => v.slug !== slug).slice(0, 3);
 
   return (
     <div className="mx-auto max-w-7xl px-5 pb-20 pt-28 lg:px-8">
@@ -136,19 +149,46 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                     shown before payment. {vehicle.baggageCapacity} bags included, excess at{" "}
                     {formatNaira(vehicle.excessLuggageCharge)}/piece.
                   </p>
-                  <div className="mt-6 flex flex-col gap-3">
-                    <Link href={`/book?vehicle=${vehicle.slug}`} className="btn btn-primary btn-lg w-full">
-                      Book this vehicle
-                    </Link>
-                    <a
-                      href={waLink(`Hello H06 Rentals! I'd like to check availability for the ${vehicle.name}.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-whatsapp btn-md w-full"
-                    >
-                      Check availability on WhatsApp
-                    </a>
-                  </div>
+                  {unavailable ? (
+                    <div className="mt-6 flex flex-col gap-4">
+                      <p className="rounded-lg border border-cream/20 bg-ink/50 px-4 py-3 text-center text-sm font-medium text-cream-dim">
+                        {busyUntil
+                          ? `Fully booked until ${formatDay(busyUntil)}`
+                          : "Temporarily unavailable"}
+                      </p>
+                      {suggestion && (
+                        <Link
+                          href={`/fleet/${suggestion.slug}`}
+                          className="glass-subtle block p-4 transition-colors hover:border-emerald-glow/40"
+                        >
+                          <p className="text-[0.65rem] uppercase tracking-wider text-emerald-glow">
+                            The concierge recommends
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-cream">{suggestion.name}</p>
+                          <p className="mt-0.5 text-xs text-muted">
+                            {suggestion.tagline} — available now →
+                          </p>
+                        </Link>
+                      )}
+                      <div className="border-t hairline pt-4">
+                        <SourceVehicleForm vehicleSlug={vehicle.slug} vehicleName={vehicle.name} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-6 flex flex-col gap-3">
+                      <Link href={`/book?vehicle=${vehicle.slug}`} className="btn btn-primary btn-lg w-full">
+                        Book this vehicle
+                      </Link>
+                      <a
+                        href={waLink(`Hello H06 Rentals! I'd like to check availability for the ${vehicle.name}.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-whatsapp btn-md w-full"
+                      >
+                        Check availability on WhatsApp
+                      </a>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -171,11 +211,6 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                     </Link>
                   </div>
                 </>
-              )}
-              {!vehicle.isAvailable && (
-                <p className="mt-4 rounded-lg border border-cream/20 bg-ink/40 p-3 text-xs text-cream-dim">
-                  This vehicle is currently engaged. The concierge can suggest dates or an equivalent car.
-                </p>
               )}
             </div>
           </Reveal>

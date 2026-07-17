@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import { Reveal } from "@/components/Reveal";
 import { EnquiryForm } from "@/components/EnquiryForm";
 
@@ -15,7 +16,8 @@ const PERKS = [
   { t: "Dedicated concierge line", d: "A direct line that answers at 2pm and at 2am." },
 ];
 
-export default function CorporatePage() {
+export default async function CorporatePage() {
+  await launchGate();
   return (
     <div className="mx-auto max-w-7xl px-5 pb-20 pt-28 lg:px-8">
       <div className="grid gap-12 lg:grid-cols-2">

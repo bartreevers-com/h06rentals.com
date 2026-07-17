@@ -7,12 +7,18 @@ export function VehicleCard({
   vehicle,
   rate,
   bronze,
+  busyUntil,
 }: {
   vehicle: Vehicle;
   rate?: VehicleRate | null;
   bronze?: boolean;
+  /** ISO date the car is booked until (computed from confirmed bookings) */
+  busyUntil?: string | null;
 }) {
   const href = `/fleet/${vehicle.slug}`;
+  const busyUntilLabel = busyUntil
+    ? new Date(`${busyUntil}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : null;
   return (
     <Link
       href={href}
@@ -39,11 +45,15 @@ export function VehicleCard({
             />
           </div>
         )}
-        {!vehicle.isAvailable && (
+        {busyUntil ? (
+          <span className="absolute left-4 top-4 rounded-full bg-ink/80 px-3 py-1 text-xs text-cream-dim">
+            Fully booked until {busyUntilLabel}
+          </span>
+        ) : !vehicle.isAvailable ? (
           <span className="absolute left-4 top-4 rounded-full bg-ink/80 px-3 py-1 text-xs text-cream-dim">
             Currently engaged
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className="p-5">

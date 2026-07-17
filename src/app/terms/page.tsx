@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -36,7 +37,8 @@ const SECTIONS = [
   },
 ];
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  await launchGate();
   return (
     <div className="mx-auto max-w-3xl px-5 pb-20 pt-28">
       <h1 className="display text-4xl text-cream">Terms of Service</h1>

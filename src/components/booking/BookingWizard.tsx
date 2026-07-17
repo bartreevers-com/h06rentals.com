@@ -11,6 +11,7 @@ import { LocationAutocomplete } from "@/components/LocationAutocomplete";
 
 interface Props {
   vehicles: Vehicle[];
+  busyMap?: Record<string, string>;
   rates: VehicleRate[];
   addOns: AddOn[];
   surcharges: InterstateSurcharge[];
@@ -42,7 +43,7 @@ interface FormState {
 
 const STEPS = ["Trip", "Details", "Vehicle", "Confirm"] as const;
 
-export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip, initialVehicle }: Props) {
+export function BookingWizard({ vehicles, busyMap = {}, rates, addOns, surcharges, initialTrip, initialVehicle }: Props) {
   const router = useRouter();
   const validInitialTrip = TRIP_TYPES.some((t) => t.id === initialTrip) ? initialTrip! : "";
   const validInitialVehicle = vehicles.some((v) => v.slug === initialVehicle) ? initialVehicle! : "";
@@ -50,6 +51,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestion, setSuggestion] = useState<{ slug: string; name: string } | null>(null);
   const [form, setForm] = useState<FormState>({
     tripType: validInitialTrip,
     vehicleSlug: validInitialVehicle,
@@ -170,6 +172,7 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
     }
     setSubmitting(true);
     setError(null);
+    setSuggestion(null);
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
@@ -197,7 +200,10 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Something went wrong — please try again");
+      if (!res.ok) {
+        if (data.suggestion) setSuggestion(data.suggestion);
+        throw new Error(data.error ?? "Something went wrong — please try again");
+      }
 
       if (data.requiresPayment) {
         const payRes = await fetch("/api/payments/init", {
@@ -476,14 +482,20 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
                     {rankedVehicles.map((v, i) => {
                       const r = rates.find((x) => x.vehicleSlug === v.slug);
                       const selected = form.vehicleSlug === v.slug;
-                      const recommended = i === 0 && trip?.instantQuote && v.tier === "core";
+                      const busyUntil = busyMap[v.slug];
+                      const recommended = i === 0 && trip?.instantQuote && v.tier === "core" && !busyUntil;
                       return (
                         <button
                           key={v.slug}
                           type="button"
+                          disabled={Boolean(busyUntil)}
                           onClick={() => set("vehicleSlug", selected ? "" : v.slug)}
                           className={`glass-subtle flex items-center gap-4 p-4 text-left transition-all ${
-                            selected ? "!border-emerald-glow/60 !bg-emerald-deep/20" : "hover:border-cream/20"
+                            busyUntil
+                              ? "cursor-not-allowed opacity-50"
+                              : selected
+                                ? "!border-emerald-glow/60 !bg-emerald-deep/20"
+                                : "hover:border-cream/20"
                           }`}
                           aria-pressed={selected}
                         >
@@ -642,9 +654,22 @@ export function BookingWizard({ vehicles, rates, addOns, surcharges, initialTrip
         </AnimatePresence>
 
         {error && (
-          <p role="alert" className="mt-5 rounded-lg border border-red-400/30 bg-red-950/30 p-3 text-sm text-red-300">
-            {error}
-          </p>
+          <div role="alert" className="mt-5 rounded-lg border border-red-400/30 bg-red-950/30 p-3 text-sm text-red-300">
+            <p>{error}</p>
+            {suggestion && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm mt-3"
+                onClick={() => {
+                  set("vehicleSlug", suggestion.slug);
+                  setSuggestion(null);
+                  setError(null);
+                }}
+              >
+                Switch to the {suggestion.name} — available now
+              </button>
+            )}
+          </div>
         )}
 
         <div className="mt-8 flex items-center justify-between">

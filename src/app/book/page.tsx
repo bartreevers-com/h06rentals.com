@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { launchGate } from "@/lib/launch-gate";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 import { listAddOns, listRates, listSurcharges, listVehicles } from "@/lib/repo";
+import { getBusyMap } from "@/lib/availability";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +17,14 @@ export default async function BookPage({
 }: {
   searchParams: Promise<{ trip?: string; vehicle?: string }>;
 }) {
+  await launchGate();
   const sp = await searchParams;
-  const [vehicles, rates, addOns, surcharges] = await Promise.all([
+  const [vehicles, rates, addOns, surcharges, busyMap] = await Promise.all([
     listVehicles({ includeUnavailable: false }),
     listRates(),
     listAddOns(),
     listSurcharges(),
-  ]);
+  , getBusyMap()]);
 
   return (
     <div className="mx-auto max-w-7xl px-5 pb-24 pt-28 lg:px-8">
@@ -33,6 +36,7 @@ export default async function BookPage({
 
       <BookingWizard
         vehicles={vehicles}
+        busyMap={busyMap}
         rates={rates}
         addOns={addOns}
         surcharges={surcharges}
