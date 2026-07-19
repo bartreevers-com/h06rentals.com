@@ -7,6 +7,7 @@ import { VehicleCard } from "@/components/VehicleCard";
 import { formatNaira } from "@/lib/quote";
 import { listRates, listVehicles } from "@/lib/repo";
 import { getBusyMap } from "@/lib/availability";
+import { isMatchday } from "@/lib/matchday";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ const TRIP_DOORS = [
 
 export default async function HomePage() {
   await launchGate();
+  const matchday = isMatchday();
   const [vehicles, rates, busyMap] = await Promise.all([listVehicles({ tier: "core" }), listRates(), getBusyMap()]);
   const vips = await listVehicles({ tier: "vip" });
   const rateFor = (slug: string) => rates.find((r) => r.vehicleSlug === slug) ?? null;
@@ -35,24 +37,49 @@ export default async function HomePage() {
         <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pb-24 pt-36 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
             <div className="fade-up">
-              <p className="eyebrow eyebrow-emerald mb-5">Lagos · Private luxury mobility</p>
-              <h1 className="display text-5xl leading-[1.05] text-cream md:text-7xl">
-                The showroom
-                <br />
-                is open.
-              </h1>
-              <p className="mt-6 max-w-md text-lg text-cream-dim">
-                Chauffeur-driven luxury for Lagos and beyond.
-                Over 5,000 trips delivered. Zero compromises.
-              </p>
-              <div className="mt-9 flex flex-wrap gap-4">
-                <Link href="/fleet" className="btn btn-primary btn-lg">
-                  Enter the showroom
-                </Link>
-                <Link href="/book" className="btn btn-ghost btn-lg">
-                  Build my trip
-                </Link>
-              </div>
+              {matchday ? (
+                <>
+                  <p className="eyebrow eyebrow-emerald mb-5">All eyes on tonight, Lagos</p>
+                  <h1 className="display text-5xl leading-[1.05] text-cream md:text-7xl">
+                    His last final.
+                    <br />
+                    His first.
+                  </h1>
+                  <p className="mt-6 max-w-md text-lg text-cream-dim">
+                    Round up your people for kickoff. We will do the driving.
+                    Fixed rates all night.
+                  </p>
+                  <div className="mt-9 flex flex-wrap gap-4">
+                    <Link href="/book?trip=24hrs" className="btn btn-primary btn-lg">
+                      Book match night
+                    </Link>
+                    <Link href="/fleet" className="btn btn-ghost btn-lg">
+                      Enter the showroom
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="eyebrow eyebrow-emerald mb-5">Lagos · Private luxury mobility</p>
+                  <h1 className="display text-5xl leading-[1.05] text-cream md:text-7xl">
+                    The showroom
+                    <br />
+                    is open.
+                  </h1>
+                  <p className="mt-6 max-w-md text-lg text-cream-dim">
+                    Chauffeur-driven luxury for Lagos and beyond.
+                    Over 5,000 trips delivered. Zero compromises.
+                  </p>
+                  <div className="mt-9 flex flex-wrap gap-4">
+                    <Link href="/fleet" className="btn btn-primary btn-lg">
+                      Enter the showroom
+                    </Link>
+                    <Link href="/book" className="btn btn-ghost btn-lg">
+                      Build my trip
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
             <div className="mx-auto w-full max-w-xl lg:max-w-none">
               <HeroStage />
