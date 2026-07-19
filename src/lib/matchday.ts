@@ -19,5 +19,8 @@ export interface Solidarity {
   colors: string[]; // flag colours, in band order
 }
 
-/** null until the winner is known. */
-export const SOLIDARITY: Solidarity | null = null;
+/** Spain won the 2026 World Cup — the loader wears la Roja. */
+export const SOLIDARITY: Solidarity | null = {
+  name: "Spain",
+  colors: ["#AA151B", "#F1BF00", "#AA151B"],
+};
