@@ -435,7 +435,7 @@ const PODCAST_VACANCY = {
     "Shortlist review",
     "On-mic interview",
     "Final assessment (live recording brief)",
-    "Owner review & offer",
+    "Review & offer",
   ],
 };
 
@@ -461,6 +461,18 @@ async function seedRecruitmentIfEmpty(db: Db) {
         actor: "System seed",
         actorRole: "owner",
         action: "updated: refocused as Podcast Host & Brand Creator (approved brief)",
+      });
+    } else if (v && v.stages.includes("Owner review & offer")) {
+      // owner-approved copy tweak to the published hiring stages (2026-07-20)
+      await db
+        .update(schema.vacancies)
+        .set({ stages: PODCAST_VACANCY.stages, updatedAt: new Date() })
+        .where(eq(schema.vacancies.id, v.id));
+      await db.insert(schema.vacancyAudit).values({
+        vacancyId: v.id,
+        actor: "System seed",
+        actorRole: "owner",
+        action: "updated: hiring stages copy — final step renamed to 'Review & offer' (owner request)",
       });
     }
     return;
