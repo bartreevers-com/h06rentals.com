@@ -441,3 +441,126 @@ html[data-h06-splash="1"] .h06-splash {
 
 /* thin scrollbars on dark */
 * { scrollbar-width: thin; scrollbar-color: rgba(201,205,209,0.2) transparent; }
+
+/* ── back office (light) ───────────────────────────────────────────
+   The admin wears its own skin: ivory field, white cards, ink text,
+   emerald kept strictly for actions — same brand, different room.
+   Scoped: every token the dark showroom uses is re-pointed here, so
+   all admin surfaces inherit the light theme without page changes. */
+.backoffice {
+  /* brand palette (03 · COLOUR) */
+  --charcoal: #f2f4f0;   /* Ivory — the field */
+  --ink: #f2f4f0;
+  --forest: #ffffff;
+  --forest-2: #f7f9f5;
+  --emerald: #2e8f5c;    /* Action */
+  --emerald-deep: #257449;
+  --emerald-glow: #2e8f5c;
+  --mint: #8fd9b0;
+  --cream: #0a0a0a;      /* Ink — text on light */
+  --cream-dim: #3d443f;
+  --muted: #6e766f;
+  --silver: #6e766f;
+  --chrome: #40463f;
+  --champagne: #8f6e1f;  /* bronze, darkened for legible text */
+
+  /* status colours re-tuned for a light field */
+  --color-red-300: #b3261e;
+  --color-red-400: #b3261e;
+  --color-red-950: #fbeae8;
+  --color-amber-300: #8f6400;
+  --color-amber-400: #8f6400;
+  /* literal white/xx borders & dividers become ink tints */
+  --color-white: #0a0a0a;
+
+  background: #f2f4f0;
+  color: #0a0a0a;
+  color-scheme: light;
+}
+
+.backoffice .glass {
+  background: #ffffff;
+  border: 1px solid rgba(10, 10, 10, 0.06);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 10px 32px rgba(11, 16, 13, 0.06), 0 1px 2px rgba(11, 16, 13, 0.04);
+  backdrop-filter: none;
+}
+
+.backoffice .glass-subtle {
+  background: #f7f9f5;
+  border: 1px solid rgba(10, 10, 10, 0.05);
+  border-radius: 14px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.backoffice .field {
+  background: #ffffff;
+  border: 1px solid rgba(10, 10, 10, 0.14);
+  color: #0a0a0a;
+}
+.backoffice .field:focus {
+  border-color: rgba(46, 143, 92, 0.6);
+  box-shadow: 0 0 0 3px rgba(46, 143, 92, 0.14);
+}
+.backoffice .field::placeholder { color: #9aa19b; }
+.backoffice select.field option { background: #ffffff; color: #0a0a0a; }
+.backoffice .field-label { color: #3d443f; }
+
+.backoffice .btn-primary {
+  background: linear-gradient(160deg, #2e8f5c, #257449);
+  color: #f2f4f0; /* ivory reads best on emerald at button sizes */
+  border: 1px solid rgba(37, 116, 73, 0.55);
+  box-shadow: 0 6px 18px rgba(46, 143, 92, 0.28);
+}
+.backoffice .btn-primary:hover {
+  box-shadow: 0 10px 24px rgba(46, 143, 92, 0.38);
+}
+
+.backoffice .btn-ghost {
+  background: #ffffff;
+  color: #0a0a0a;
+  border: 1px solid rgba(10, 10, 10, 0.14);
+  backdrop-filter: none;
+}
+.backoffice .btn-ghost:hover {
+  border-color: rgba(46, 143, 92, 0.55);
+  background: #f2f7f3;
+}
+
+.backoffice .hairline { border-color: rgba(10, 10, 10, 0.08); }
+.backoffice .eyebrow { color: #6e766f; }
+.backoffice .eyebrow-emerald { color: #2e8f5c; }
+.backoffice input[type="date"],
+.backoffice input[type="time"],
+.backoffice input[type="datetime-local"] { color-scheme: light; }
+
+/* one dark feature card per view, like the mockup's Overall Information */
+.backoffice .bo-feature {
+  background: #0b100d;
+  border: 1px solid #0b100d;
+  --cream: #f2f4f0;
+  --cream-dim: #c6ccc7;
+  --muted: #8fd9b0; /* mint accents live on dark */
+  color: #f2f4f0;
+  box-shadow: 0 14px 36px rgba(11, 16, 13, 0.28);
+}
+
+/* sidebar nav */
+.backoffice .bo-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: #3d443f;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.backoffice .bo-nav-item:hover { background: #f2f4f0; color: #0a0a0a; }
+.backoffice .bo-nav-item.active {
+  background: #0b100d;
+  color: #f2f4f0;
+  font-weight: 500;
+}
+.backoffice .bo-nav-item.active svg { color: #8fd9b0; }

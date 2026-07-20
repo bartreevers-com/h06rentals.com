@@ -28,6 +28,7 @@ import {
   adminPassword,
   createSession,
   destroySession,
+  getSession,
   hasRole,
   hashPassword,
   verifyPassword,
@@ -553,7 +554,7 @@ async function resetAndEmailLogin(user: {
       `Password: ${password}`,
       ``,
       `Your role (${user.role.replace("_", " ")}) decides what you see when you sign in.`,
-      `Keep this password private — if you ever need a new one, ask an owner to reset it from the Team page.`,
+      `Keep this password private. Once signed in you can change it any time — tap "Password" next to your name.`,
       ``,
       `H06 Rentals — Operations`,
     ].join("\n"),
@@ -600,4 +601,32 @@ export async function emailAllLoginsAction(
   return {
     ok: `New passwords set and emailed to ${sent} people${skipped.length ? ` — skipped: ${skipped.join(", ")}` : ""}`,
   };
+}
+
+/** Any signed-in staff member changes their own password: current password
+ *  required, new one at least 8 characters. The break-glass owner login has
+ *  no account row — its password lives in the environment. */
+export async function changeMyPasswordAction(
+  _prev: { error?: string; ok?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: string }> {
+  const session = await getSession();
+  if (!session) redirect("/admin");
+  if (session.userId === 0)
+    return { error: "The owner sign-in password is set in the server environment, not here" };
+
+  const current = String(formData.get("current") ?? "");
+  const next = String(formData.get("next") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  if (next.length < 8) return { error: "New password must be at least 8 characters" };
+  if (next !== confirm) return { error: "New passwords don't match" };
+
+  const db = await getDb();
+  const rows = await db.select().from(staffUsers).where(eq(staffUsers.id, session.userId)).limit(1);
+  const user = rows[0];
+  if (!user || !user.isActive) return { error: "Account not found" };
+  if (!verifyPassword(current, user.passwordHash)) return { error: "Current password is incorrect" };
+
+  await db.update(staffUsers).set({ passwordHash: hashPassword(next) }).where(eq(staffUsers.id, user.id));
+  return { ok: "Password changed — use the new one next time you sign in" };
 }

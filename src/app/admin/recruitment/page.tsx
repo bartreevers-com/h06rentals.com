@@ -131,8 +131,8 @@ export default async function RecruitmentPage() {
 
       {stats && (
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {Object.entries(stats).map(([label, value]) => (
-            <div key={label} className="glass-subtle p-4">
+          {Object.entries(stats).map(([label, value], i) => (
+            <div key={label} className={i === 0 ? "glass bo-feature p-4" : "glass p-4"}>
               <p className="text-2xl font-semibold text-cream">{value}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-widest text-muted">{label}</p>
             </div>
