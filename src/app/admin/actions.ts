@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -16,6 +17,7 @@ import {
   vehicles,
 } from "@/lib/db/schema";
 import { KPI_TEMPLATES } from "@/lib/kpi-templates";
+import { sendEmail } from "@/lib/email";
 import { createBookingRecord } from "@/lib/booking-service";
 import {
   emailBookingCancelled,
@@ -511,4 +513,91 @@ export async function resetStaffPasswordAction(_prev: { error?: string; ok?: str
   await db.update(staffUsers).set({ passwordHash: hashPassword(password) }).where(eq(staffUsers.id, id));
   revalidatePath("/admin/team");
   return { ok: "Password updated" };
+}
+
+/* ── login-details onboarding (owner only) ───────────────────── */
+
+/** Readable, strong initial password, e.g. H06-K3TP-W7XM.
+ *  No ambiguous characters; ~41 bits from a CSPRNG. */
+function generateInitialPassword(): string {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.randomBytes(8);
+  const pick = (i: number) => alphabet[bytes[i] % alphabet.length];
+  return `H06-${pick(0)}${pick(1)}${pick(2)}${pick(3)}-${pick(4)}${pick(5)}${pick(6)}${pick(7)}`;
+}
+
+async function resetAndEmailLogin(user: {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  role: string;
+}): Promise<"sent" | "skipped"> {
+  if (!user.email || user.role === "staff") return "skipped";
+  const password = generateInitialPassword();
+  const db = await getDb();
+  await db.update(staffUsers).set({ passwordHash: hashPassword(password) }).where(eq(staffUsers.id, user.id));
+
+  const firstName = user.name.split(" ")[0];
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.h06rentals.com";
+  await sendEmail({
+    to: user.email,
+    subject: "Your H06 Operations login",
+    text: [
+      `Dear ${firstName},`,
+      ``,
+      `Your H06 Operations account is ready.`,
+      ``,
+      `Sign in at: ${site}/admin`,
+      `Phone number: ${user.phone}`,
+      `Password: ${password}`,
+      ``,
+      `Your role (${user.role.replace("_", " ")}) decides what you see when you sign in.`,
+      `Keep this password private — if you ever need a new one, ask an owner to reset it from the Team page.`,
+      ``,
+      `H06 Rentals — Operations`,
+    ].join("\n"),
+    logBody: `[login details for ${user.name} — password redacted from log]`,
+  });
+  return "sent";
+}
+
+export async function emailLoginDetailsAction(
+  _prev: { error?: string; ok?: string } | null,
+  formData: FormData,
+): Promise<{ error?: string; ok?: string }> {
+  await requireRole("owner");
+  const id = Number(formData.get("id"));
+  const db = await getDb();
+  const rows = await db.select().from(staffUsers).where(eq(staffUsers.id, id)).limit(1);
+  const user = rows[0];
+  if (!user) return { error: "User not found" };
+  if (!user.email) return { error: "No email on file — add one first" };
+  if (user.role === "staff") return { error: "Staff accounts have no sign-in — nothing to send" };
+  if (!user.isActive) return { error: "Account is deactivated — reactivate it first" };
+  await resetAndEmailLogin(user);
+  revalidatePath("/admin/team");
+  return { ok: `New password set and emailed to ${user.email}` };
+}
+
+/** Reset every active, sign-in-capable account to a fresh password and email
+ *  each person their own login. The passwords are never shown on screen and
+ *  are redacted from the email log. */
+export async function emailAllLoginsAction(
+  _prev: { error?: string; ok?: string } | null,
+  _formData: FormData,
+): Promise<{ error?: string; ok?: string }> {
+  await requireRole("owner");
+  const db = await getDb();
+  const rows = await db.select().from(staffUsers).where(eq(staffUsers.isActive, true));
+  let sent = 0;
+  const skipped: string[] = [];
+  for (const user of rows) {
+    if ((await resetAndEmailLogin(user)) === "sent") sent++;
+    else skipped.push(`${user.name} (${user.role === "staff" ? "no sign-in role" : "no email"})`);
+  }
+  revalidatePath("/admin/team");
+  return {
+    ok: `New passwords set and emailed to ${sent} people${skipped.length ? ` — skipped: ${skipped.join(", ")}` : ""}`,
+  };
 }

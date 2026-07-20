@@ -1,7 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-import { createStaffAction, resetStaffPasswordAction } from "../actions";
+import { useActionState, useState } from "react";
+import {
+  createStaffAction,
+  emailAllLoginsAction,
+  emailLoginDetailsAction,
+  resetStaffPasswordAction,
+} from "../actions";
 
 export function CreateStaffForm() {
   const [state, action, pending] = useActionState(createStaffAction, null);
@@ -71,5 +76,47 @@ export function ResetPasswordForm({ userId }: { userId: number }) {
       {state?.error && <span className="text-xs text-red-300">{state.error}</span>}
       {state?.ok && <span className="text-xs text-emerald-glow">{state.ok}</span>}
     </form>
+  );
+}
+
+export function EmailLoginButton({ userId }: { userId: number }) {
+  const [state, action, pending] = useActionState(emailLoginDetailsAction, null);
+  return (
+    <form action={action} className="mt-2">
+      <input type="hidden" name="id" value={userId} />
+      <button className="btn btn-ghost btn-sm" disabled={pending}>
+        {pending ? "Sending…" : "Reset password & email login"}
+      </button>
+      {state?.error && <p className="mt-1.5 text-xs text-red-300">{state.error}</p>}
+      {state?.ok && <p className="mt-1.5 text-xs text-emerald-glow">{state.ok}</p>}
+    </form>
+  );
+}
+
+export function EmailAllLoginsButton() {
+  const [state, action, pending] = useActionState(emailAllLoginsAction, null);
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div>
+      {!confirming ? (
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirming(true)}>
+          Reset &amp; email all logins
+        </button>
+      ) : (
+        <form action={action} className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-amber-300">
+            Every active account gets a NEW password, emailed to them. Current passwords stop working.
+          </span>
+          <button className="btn btn-primary btn-sm" disabled={pending}>
+            {pending ? "Sending…" : "Yes, reset & email everyone"}
+          </button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirming(false)} disabled={pending}>
+            Cancel
+          </button>
+        </form>
+      )}
+      {state?.ok && <p className="mt-2 text-xs text-emerald-glow">{state.ok}</p>}
+      {state?.error && <p className="mt-2 text-xs text-red-300">{state.error}</p>}
+    </div>
   );
 }

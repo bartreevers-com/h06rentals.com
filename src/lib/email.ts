@@ -68,24 +68,32 @@ export function renderBrandedEmail(bodyHtml: string): string {
 </html>`;
 }
 
-export async function sendEmail(opts: { to: string; subject: string; text: string; html?: string }) {
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  /** Stored in email_log instead of the real body — use for credentials. */
+  logBody?: string;
+}) {
   const db = await getDb();
   const from = process.env.EMAIL_FROM ?? "H06 Rentals <bookings@h06rentals.com>";
   const html = renderBrandedEmail(opts.html ?? textToHtml(opts.text));
+  const loggedBody = opts.logBody ?? opts.text;
   if (process.env.RESEND_API_KEY) {
     try {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({ from, to: opts.to, subject: opts.subject, text: opts.text, html });
-      await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: opts.text, status: "sent" });
+      await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: loggedBody, status: "sent" });
       return { sent: true };
     } catch (err) {
       console.error("[email] send failed", err);
-      await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: opts.text, status: "failed" });
+      await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: loggedBody, status: "failed" });
       return { sent: false };
     }
   }
-  await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: opts.text, status: "logged" });
+  await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: loggedBody, status: "logged" });
   // no key = nothing was sent; print the whole message so dev flows (e.g. OTP) stay usable
   console.log(`[email:logged] to=${opts.to} subject=${opts.subject}\n${opts.text}`);
   return { sent: false };

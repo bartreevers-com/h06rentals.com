@@ -4,7 +4,7 @@ import { getDb } from "@/lib/db";
 import { staffUsers } from "@/lib/db/schema";
 import { hasRole } from "@/lib/admin-auth";
 import { setStaffRoleAction, toggleStaffAction } from "../actions";
-import { CreateStaffForm, ResetPasswordForm } from "./TeamForms";
+import { CreateStaffForm, EmailAllLoginsButton, EmailLoginButton, ResetPasswordForm } from "./TeamForms";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,10 @@ export default async function AdminTeam() {
         Driver: their assigned trips.
       </p>
 
+      <div className="mt-5">
+        <EmailAllLoginsButton />
+      </div>
+
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <div className="space-y-3">
           {rows.length === 0 && (
@@ -71,6 +75,7 @@ export default async function AdminTeam() {
               <details className="mt-2">
                 <summary className="cursor-pointer text-xs text-muted hover:text-cream-dim">Reset password</summary>
                 <ResetPasswordForm userId={u.id} />
+                <EmailLoginButton userId={u.id} />
               </details>
               <details className="mt-1.5">
                 <summary className="cursor-pointer text-xs text-muted hover:text-cream-dim">Change role</summary>
