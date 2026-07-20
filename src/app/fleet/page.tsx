@@ -7,7 +7,9 @@ import { formatNaira } from "@/lib/quote";
 import { listRates, listVehicles } from "@/lib/repo";
 import { getBusyMap } from "@/lib/availability";
 
-export const dynamic = "force-dynamic";
+// Served from the edge cache and refreshed in the background every minute —
+// visitors get an instant response; the database is off the hot path.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "The Fleet — Luxury SUVs with Chauffeur, Lagos",

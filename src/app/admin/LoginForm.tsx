@@ -12,9 +12,11 @@ export function LoginForm() {
         <input
           id="identifier"
           name="identifier"
+          type="tel"
+          inputMode="tel"
           className="field"
           autoComplete="username"
-          placeholder="+234… (owner: type owner)"
+          placeholder="e.g. 08012345678"
           autoFocus
         />
       </div>

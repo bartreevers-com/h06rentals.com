@@ -9,7 +9,9 @@ import { listRates, listVehicles } from "@/lib/repo";
 import { getBusyMap } from "@/lib/availability";
 import { waLink, WA_PRESETS } from "@/lib/whatsapp-client";
 
-export const dynamic = "force-dynamic";
+// Served from the edge cache and refreshed in the background every minute —
+// visitors get an instant response; the database is off the hot path.
+export const revalidate = 60;
 
 const TRIP_DOORS = [
   { trip: "airport_pickup", label: "Airport pickup", note: "From ₦100,000" },

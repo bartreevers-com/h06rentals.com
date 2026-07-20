@@ -55,12 +55,20 @@ export async function loginAction(_prev: { error?: string } | null, formData: Fo
 
   if (identifier && password) {
     const db = await getDb();
-    const rows = await db
-      .select()
-      .from(staffUsers)
-      .where(eq(staffUsers.phone, identifier))
-      .limit(1);
-    const user = rows[0];
+    // forgiving phone match: +234 803…, 0803…, spaces and dashes all land
+    // on the same account (accounts are stored as 0XXXXXXXXXX)
+    const digits = identifier.replace(/\D/g, "");
+    const candidates = [...new Set([identifier, digits, digits.length >= 10 ? `0${digits.slice(-10)}` : ""])].filter(
+      Boolean,
+    );
+    let user: typeof staffUsers.$inferSelect | undefined;
+    for (const candidate of candidates) {
+      const rows = await db.select().from(staffUsers).where(eq(staffUsers.phone, candidate)).limit(1);
+      if (rows[0]) {
+        user = rows[0];
+        break;
+      }
+    }
     if (user && user.isActive && user.role !== "staff" && verifyPassword(password, user.passwordHash)) {
       await createSession({ userId: user.id, role: user.role as StaffRole, name: user.name });
       redirect(
@@ -533,7 +541,7 @@ async function resetAndEmailLogin(user: {
   phone: string;
   email: string | null;
   role: string;
-}): Promise<"sent" | "skipped"> {
+}): Promise<"sent" | "failed" | "skipped"> {
   if (!user.email || user.role === "staff") return "skipped";
   const password = generateInitialPassword();
   const db = await getDb();
@@ -541,13 +549,13 @@ async function resetAndEmailLogin(user: {
 
   const firstName = user.name.split(" ")[0];
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.h06rentals.com";
-  await sendEmail({
+  const result = await sendEmail({
     to: user.email,
-    subject: "Your H06 Operations login",
+    subject: "Your H06 Office login",
     text: [
       `Dear ${firstName},`,
       ``,
-      `Your H06 Operations account is ready.`,
+      `Your H06 Office account is ready.`,
       ``,
       `Sign in at: ${site}/admin`,
       `Phone number: ${user.phone}`,
@@ -560,7 +568,7 @@ async function resetAndEmailLogin(user: {
     ].join("\n"),
     logBody: `[login details for ${user.name} — password redacted from log]`,
   });
-  return "sent";
+  return result.sent ? "sent" : "failed";
 }
 
 export async function emailLoginDetailsAction(
@@ -576,8 +584,12 @@ export async function emailLoginDetailsAction(
   if (!user.email) return { error: "No email on file — add one first" };
   if (user.role === "staff") return { error: "Staff accounts have no sign-in — nothing to send" };
   if (!user.isActive) return { error: "Account is deactivated — reactivate it first" };
-  await resetAndEmailLogin(user);
+  const outcome = await resetAndEmailLogin(user);
   revalidatePath("/admin/team");
+  if (outcome !== "sent")
+    return {
+      error: `The password WAS reset, but the email to ${user.email} did not send — the address may not exist or the email service rejected it. Set a password manually and share it directly.`,
+    };
   return { ok: `New password set and emailed to ${user.email}` };
 }
 
@@ -592,15 +604,20 @@ export async function emailAllLoginsAction(
   const db = await getDb();
   const rows = await db.select().from(staffUsers).where(eq(staffUsers.isActive, true));
   let sent = 0;
+  const failed: string[] = [];
   const skipped: string[] = [];
   for (const user of rows) {
-    if ((await resetAndEmailLogin(user)) === "sent") sent++;
+    const outcome = await resetAndEmailLogin(user);
+    if (outcome === "sent") sent++;
+    else if (outcome === "failed") failed.push(`${user.name} (${user.email})`);
     else skipped.push(`${user.name} (${user.role === "staff" ? "no sign-in role" : "no email"})`);
   }
   revalidatePath("/admin/team");
-  return {
-    ok: `New passwords set and emailed to ${sent} people${skipped.length ? ` — skipped: ${skipped.join(", ")}` : ""}`,
-  };
+  const parts = [`New passwords set; emails sent to ${sent} people`];
+  if (failed.length)
+    parts.push(`⚠ did NOT send to: ${failed.join(", ")} — set passwords manually for them`);
+  if (skipped.length) parts.push(`skipped: ${skipped.join(", ")}`);
+  return { ok: parts.join(" · ") };
 }
 
 /** Any signed-in staff member changes their own password: current password

@@ -10,7 +10,9 @@ export const metadata: Metadata = {
     "Open roles at H06 Rentals: hosting, driving, sales, operations and more. Build Lagos's most considered luxury mobility brand with us.",
 };
 
-export const dynamic = "force-dynamic";
+// Served from the edge cache and refreshed in the background every minute —
+// visitors get an instant response; the database is off the hot path.
+export const revalidate = 60;
 
 const ENGAGEMENT_LABELS: Record<string, string> = {
   full_time: "Full-time",

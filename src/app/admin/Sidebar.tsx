@@ -8,6 +8,11 @@ export interface NavTab {
   label: string;
 }
 
+export interface NavSection {
+  label: string;
+  tabs: NavTab[];
+}
+
 /** Minimal line icons, keyed by section. */
 function Icon({ href }: { href: string }) {
   const common = {
@@ -55,26 +60,48 @@ function Icon({ href }: { href: string }) {
   return <svg {...common}><circle cx="12" cy="12" r="8" /></svg>;
 }
 
-export function SidebarNav({ tabs, orientation }: { tabs: NavTab[]; orientation: "vertical" | "horizontal" }) {
-  const pathname = usePathname();
+function NavItem({ tab, active }: { tab: NavTab; active: boolean }) {
   return (
-    <nav
-      aria-label="Admin"
-      className={orientation === "vertical" ? "flex flex-col gap-1" : "flex gap-1.5 overflow-x-auto pb-1"}
-    >
-      {tabs.map((t) => {
-        const active = pathname === t.href || pathname.startsWith(`${t.href}/`);
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`bo-nav-item whitespace-nowrap ${active ? "active" : ""}`}
-          >
-            <Icon href={t.href} />
-            {t.label}
-          </Link>
-        );
-      })}
+    <Link href={tab.href} className={`bo-nav-item whitespace-nowrap ${active ? "active" : ""}`}>
+      <Icon href={tab.href} />
+      {tab.label}
+    </Link>
+  );
+}
+
+/** Grouped navigation: labelled sections on desktop, a flat pill row on mobile. */
+export function SidebarNav({
+  sections,
+  orientation,
+}: {
+  sections: NavSection[];
+  orientation: "vertical" | "horizontal";
+}) {
+  const pathname = usePathname();
+  const isActive = (t: NavTab) => pathname === t.href || pathname.startsWith(`${t.href}/`);
+
+  if (orientation === "horizontal") {
+    return (
+      <nav aria-label="Admin" className="flex gap-1.5 overflow-x-auto pb-1">
+        {sections.flatMap((s) => s.tabs).map((t) => (
+          <NavItem key={t.href} tab={t} active={isActive(t)} />
+        ))}
+      </nav>
+    );
+  }
+
+  return (
+    <nav aria-label="Admin" className="flex flex-col gap-6">
+      {sections.map((section) => (
+        <div key={section.label}>
+          <p className="eyebrow mb-2.5 px-1 !text-[0.6rem]">{section.label}</p>
+          <div className="flex flex-col gap-1">
+            {section.tabs.map((t) => (
+              <NavItem key={t.href} tab={t} active={isActive(t)} />
+            ))}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }

@@ -2,39 +2,40 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/admin-auth";
 import { logoutAction } from "./actions";
-import { SidebarNav, type NavTab } from "./Sidebar";
+import { SidebarNav, type NavSection, type NavTab } from "./Sidebar";
 
 export const metadata: Metadata = {
   title: "Admin — H06 Rentals",
   robots: { index: false, follow: false },
 };
 
-const OPS_TABS: NavTab[] = [
+const OPS: NavTab[] = [
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/fleet", label: "Fleet & Rates" },
   { href: "/admin/addons", label: "Add-ons" },
   { href: "/admin/enquiries", label: "Enquiries" },
 ];
+const PEOPLE: NavTab[] = [
+  { href: "/admin/performance", label: "Performance" },
+  { href: "/admin/recruitment", label: "Recruitment" },
+  { href: "/admin/team", label: "Team" },
+];
 
-const TABS: Record<string, NavTab[]> = {
+/** Every role sees the same structure — Operations, then People — with
+ *  only the entries their role can open. */
+const SECTIONS: Record<string, NavSection[]> = {
   owner: [
-    ...OPS_TABS,
-    { href: "/admin/performance", label: "Performance" },
-    { href: "/admin/recruitment", label: "Recruitment" },
-    { href: "/admin/team", label: "Team" },
+    { label: "Operations", tabs: OPS },
+    { label: "People", tabs: PEOPLE },
   ],
-  admin: OPS_TABS,
+  admin: [{ label: "Operations", tabs: OPS }],
   sales: [
-    { href: "/admin/bookings", label: "Bookings" },
-    { href: "/admin/enquiries", label: "Enquiries" },
+    { label: "Operations", tabs: [OPS[0], OPS[3]] },
   ],
-  driver: [{ href: "/admin/trips", label: "My Trips" }],
-  hr: [
-    { href: "/admin/performance", label: "Performance" },
-    { href: "/admin/recruitment", label: "Recruitment" },
-  ],
-  hiring_manager: [{ href: "/admin/recruitment", label: "Recruitment" }],
-  assessor: [{ href: "/admin/recruitment", label: "Recruitment" }],
+  driver: [{ label: "Workspace", tabs: [{ href: "/admin/trips", label: "My Trips" }] }],
+  hr: [{ label: "People", tabs: [PEOPLE[0], PEOPLE[1]] }],
+  hiring_manager: [{ label: "People", tabs: [PEOPLE[1]] }],
+  assessor: [{ label: "People", tabs: [PEOPLE[1]] }],
 };
 
 function LogoBlock() {
@@ -51,7 +52,7 @@ function LogoBlock() {
       />
       <span className="flex flex-col leading-none">
         <span className="text-[0.8rem] font-semibold tracking-[0.24em] text-cream">H06</span>
-        <span className="mt-1 text-[0.55rem] uppercase tracking-[0.34em] text-muted">Operations</span>
+        <span className="mt-1 text-[0.55rem] uppercase tracking-[0.34em] text-muted">Office</span>
       </span>
     </div>
   );
@@ -76,7 +77,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   }
 
-  const tabs = TABS[session.role] ?? [];
+  const sections = SECTIONS[session.role] ?? [];
+  const tabCount = sections.reduce((n, s) => n + s.tabs.length, 0);
 
   return (
     <div className="backoffice min-h-screen">
@@ -85,9 +87,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] w-60 shrink-0 flex-col lg:flex">
           <div className="glass flex h-full flex-col p-5">
             <LogoBlock />
-            <div className="mt-8 flex-1">
-              <p className="eyebrow mb-3 px-1">Workspace</p>
-              <SidebarNav tabs={tabs} orientation="vertical" />
+            <div className="mt-8 flex-1 overflow-y-auto">
+              <SidebarNav sections={sections} orientation="vertical" />
             </div>
             <div className="border-t hairline pt-4">
               <p className="truncate text-sm font-medium text-cream">{session.name}</p>
@@ -128,9 +129,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 </form>
               </div>
             </div>
-            {tabs.length > 1 && (
+            {tabCount > 1 && (
               <div className="mt-3">
-                <SidebarNav tabs={tabs} orientation="horizontal" />
+                <SidebarNav sections={sections} orientation="horizontal" />
               </div>
             )}
           </header>
