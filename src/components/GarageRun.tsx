@@ -34,14 +34,19 @@ export function GarageRun() {
   const [best, setBest] = useState(0);
   const [lastScore, setLastScore] = useState(0);
   const phaseRef = useRef(phase);
-  phaseRef.current = phase;
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const game = useRef({ y: 0, vy: 0, speed: BASE_SPEED, dist: 0, nextGap: 0, cones: [] as Cone[], raf: 0, last: 0 });
 
   useEffect(() => {
-    try {
-      setBest(Number(localStorage.getItem("h06_run_best")) || 0);
-    } catch {}
+    const t = setTimeout(() => {
+      try {
+        setBest(Number(localStorage.getItem("h06_run_best")) || 0);
+      } catch {}
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -172,7 +177,6 @@ export function GarageRun() {
       stage?.removeEventListener("pointerdown", onPointer);
       clearCones();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
