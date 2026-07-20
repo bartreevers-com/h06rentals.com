@@ -61,7 +61,13 @@ export async function loginAction(_prev: { error?: string } | null, formData: Fo
     if (user && user.isActive && user.role !== "staff" && verifyPassword(password, user.passwordHash)) {
       await createSession({ userId: user.id, role: user.role as StaffRole, name: user.name });
       redirect(
-        user.role === "driver" ? "/admin/trips" : user.role === "hr" ? "/admin/performance" : "/admin/bookings",
+        user.role === "driver"
+          ? "/admin/trips"
+          : user.role === "hr"
+            ? "/admin/performance"
+            : ["hiring_manager", "assessor"].includes(user.role)
+              ? "/admin/recruitment"
+              : "/admin/bookings",
       );
     }
   }
@@ -359,7 +365,8 @@ export async function createStaffAction(_prev: { error?: string; ok?: string } |
   const password = String(formData.get("password") ?? "");
   if (name.length < 2) return { error: "Please add a name" };
   if (phone.length < 7) return { error: "Please add a phone number — it's their login" };
-  if (!["admin", "sales", "driver", "hr", "staff"].includes(role)) return { error: "Choose a role" };
+  if (!["admin", "sales", "driver", "hr", "staff", "hiring_manager", "assessor"].includes(role))
+    return { error: "Choose a role" };
   if (role !== "staff" && password.length < 8) return { error: "Password must be at least 8 characters" };
   const db = await getDb();
   const existing = await db.select().from(staffUsers).where(eq(staffUsers.phone, phone)).limit(1);

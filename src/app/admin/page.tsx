@@ -4,7 +4,16 @@ import { LoginForm } from "./LoginForm";
 
 export default async function AdminHome() {
   const session = await getSession();
-  if (session) redirect(session.role === "driver" ? "/admin/trips" : "/admin/bookings");
+  if (session)
+    redirect(
+      session.role === "driver"
+        ? "/admin/trips"
+        : session.role === "hr"
+          ? "/admin/performance"
+          : ["hiring_manager", "assessor"].includes(session.role)
+            ? "/admin/recruitment"
+            : "/admin/bookings",
+    );
   return (
     <div className="mx-auto max-w-sm pt-16">
       <h1 className="display text-2xl text-cream">Staff sign-in</h1>

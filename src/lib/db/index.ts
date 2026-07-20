@@ -208,6 +208,139 @@ CREATE TABLE IF NOT EXISTS kpi_scores (
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   UNIQUE (kpi_id, period_date)
 );
+CREATE TABLE IF NOT EXISTS vacancies (
+  id SERIAL PRIMARY KEY,
+  reference TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  department TEXT NOT NULL,
+  hiring_manager TEXT,
+  engagement_type TEXT NOT NULL DEFAULT 'full_time',
+  location TEXT NOT NULL DEFAULT 'Lagos, Nigeria',
+  work_arrangement TEXT NOT NULL DEFAULT 'on_site',
+  openings INTEGER NOT NULL DEFAULT 1,
+  summary TEXT NOT NULL DEFAULT '',
+  responsibilities JSONB NOT NULL DEFAULT '[]',
+  essentials JSONB NOT NULL DEFAULT '[]',
+  desirables JSONB NOT NULL DEFAULT '[]',
+  competencies JSONB NOT NULL DEFAULT '[]',
+  compensation TEXT,
+  compensation_public BOOLEAN NOT NULL DEFAULT FALSE,
+  opens_at TIMESTAMP,
+  closes_at TIMESTAMP,
+  expected_start TEXT,
+  questions JSONB NOT NULL DEFAULT '[]',
+  required_docs JSONB NOT NULL DEFAULT '{"cv":true,"supporting":false,"video":false,"audio":false}',
+  stages JSONB NOT NULL DEFAULT '[]',
+  panel JSONB NOT NULL DEFAULT '[]',
+  privacy_version TEXT NOT NULL DEFAULT '1.0',
+  retention_days INTEGER NOT NULL DEFAULT 180,
+  status TEXT NOT NULL DEFAULT 'draft',
+  created_by TEXT NOT NULL,
+  approved_by TEXT,
+  approved_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS vacancy_audit (
+  id SERIAL PRIMARY KEY,
+  vacancy_id INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  action TEXT NOT NULL,
+  reason TEXT,
+  previous_config JSONB,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS candidates (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  first_name TEXT,
+  last_name TEXT,
+  phone TEXT,
+  otp_hash TEXT,
+  otp_expires_at TIMESTAMP,
+  verified_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS applications (
+  id SERIAL PRIMARY KEY,
+  ref TEXT NOT NULL UNIQUE,
+  vacancy_id INTEGER NOT NULL,
+  candidate_id INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',
+  form JSONB NOT NULL DEFAULT '{}',
+  submitted JSONB,
+  submitted_at TIMESTAMP,
+  privacy_version TEXT,
+  privacy_acknowledged_at TIMESTAMP,
+  talent_pool_consent BOOLEAN NOT NULL DEFAULT FALSE,
+  talent_pool_consent_at TIMESTAMP,
+  lawful_basis TEXT NOT NULL DEFAULT 'legitimate_interest',
+  eligibility_result TEXT,
+  retention_expiry TIMESTAMP,
+  legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
+  anonymised_at TIMESTAMP,
+  withdrawn_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (vacancy_id, candidate_id)
+);
+CREATE TABLE IF NOT EXISTS application_amendments (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  content JSONB NOT NULL,
+  note TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS application_audit (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  from_status TEXT NOT NULL,
+  to_status TEXT NOT NULL,
+  reason TEXT,
+  is_override BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS application_files (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  storage_path TEXT NOT NULL,
+  storage_driver TEXT NOT NULL,
+  scan_status TEXT NOT NULL DEFAULT 'not_scanned',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS file_access_log (
+  id SERIAL PRIMARY KEY,
+  file_id INTEGER NOT NULL,
+  actor TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS candidate_comms (
+  id SERIAL PRIMARY KEY,
+  candidate_id INTEGER NOT NULL,
+  application_id INTEGER,
+  template TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL,
+  status TEXT NOT NULL,
+  sent_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS application_notes (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  author TEXT NOT NULL,
+  note TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS email_list (
   id SERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,

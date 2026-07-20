@@ -23,6 +23,7 @@ export async function sendEmail(opts: { to: string; subject: string; text: strin
     }
   }
   await db.insert(emailLog).values({ to: opts.to, subject: opts.subject, body: opts.text, status: "logged" });
-  console.log(`[email:logged] to=${opts.to} subject=${opts.subject}`);
+  // no key = nothing was sent; print the whole message so dev flows (e.g. OTP) stay usable
+  console.log(`[email:logged] to=${opts.to} subject=${opts.subject}\n${opts.text}`);
   return { sent: false };
 }

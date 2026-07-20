@@ -10,6 +10,7 @@ type Db = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof schema>;
  * production booking engine on 2026-07-08).
  */
 export async function seedIfEmpty(db: Db) {
+  await seedRecruitmentIfEmpty(db);
   const existing = await db.select({ n: sql<number>`count(*)` }).from(schema.vehicles);
   if (Number(existing[0]?.n ?? 0) > 0) {
     await syncGalleries(db);
@@ -281,6 +282,101 @@ export async function seedIfEmpty(db: Db) {
   ]);
 
   await syncGalleries(db);
+}
+
+/** The launch vacancy: Founding Host & Brand Creator. Published and open,
+ *  ready for real applications the moment the module deploys. */
+async function seedRecruitmentIfEmpty(db: Db) {
+  const existing = await db.select({ n: sql<number>`count(*)` }).from(schema.vacancies);
+  if (Number(existing[0]?.n ?? 0) > 0) return;
+
+  const [vacancy] = await db
+    .insert(schema.vacancies)
+    .values({
+      reference: "H06-VAC-0001",
+      slug: "founding-host-brand-creator",
+      title: "Founding Host & Brand Creator",
+      department: "Brand & Experience",
+      hiringManager: "Owner",
+      engagementType: "full_time",
+      location: "Lekki, Lagos",
+      workArrangement: "hybrid",
+      openings: 1,
+      summary:
+        "Be the face and voice of H06. You'll host our guests and our audience — on camera, on the showroom floor, and everywhere the brand shows up. We're looking for presence, warmth and taste, not a CV full of titles.",
+      responsibilities: [
+        "Host and present H06 content: fleet features, guest experiences, behind-the-scenes",
+        "Own the on-camera identity of the brand across Instagram, TikTok and YouTube",
+        "Welcome VIP clients at the showroom and on signature experiences",
+        "Shape the H06 content calendar with the owner and marketing",
+        "Represent H06 at events, launches and partner activations",
+      ],
+      essentials: [
+        "Exceptional on-camera presence and spoken English",
+        "Genuine feel for hospitality — you make people comfortable",
+        "Comfortable creating content on a phone-first workflow",
+        "Based in Lagos or able to relocate",
+      ],
+      desirables: [
+        "An existing audience or portfolio of created content",
+        "Experience in luxury, hospitality or automotive",
+        "Yoruba and/or Pidgin fluency",
+      ],
+      competencies: [
+        { name: "On-camera presence", weight: 3 },
+        { name: "Hospitality instinct", weight: 3 },
+        { name: "Content craft", weight: 2 },
+        { name: "Reliability & professionalism", weight: 2 },
+      ],
+      compensation: "Competitive base + content performance bonus",
+      compensationPublic: false,
+      opensAt: new Date("2026-07-19T00:00:00Z"),
+      closesAt: new Date("2026-08-31T23:59:59Z"),
+      expectedStart: "September 2026",
+      questions: [
+        {
+          id: "q1",
+          label: "Why H06, and why you? Tell us in your own voice.",
+          type: "textarea",
+          required: true,
+        },
+        {
+          id: "q2",
+          label: "Link to the piece of content (yours or anyone's) that best shows the energy you'd bring",
+          type: "link",
+          required: true,
+        },
+        {
+          id: "q3",
+          label: "Are you available to work evenings and weekends when shoots or VIP bookings require it?",
+          type: "yes_no",
+          required: true,
+          eligibility: true,
+        },
+      ],
+      requiredDocs: { cv: true, supporting: false, video: true, audio: false },
+      stages: [
+        "Eligibility screening",
+        "Shortlist review",
+        "On-camera interview",
+        "Final assessment (live content brief)",
+        "Owner review & offer",
+      ],
+      panel: [],
+      privacyVersion: "1.0",
+      retentionDays: 180,
+      status: "published",
+      createdBy: "System seed",
+      approvedBy: "Owner",
+      approvedAt: new Date("2026-07-20T00:00:00Z"),
+    })
+    .returning();
+
+  await db.insert(schema.vacancyAudit).values([
+    { vacancyId: vacancy.id, actor: "System seed", actorRole: "owner", action: "created" },
+    { vacancyId: vacancy.id, actor: "Owner", actorRole: "owner", action: "internal_review → approved" },
+    { vacancyId: vacancy.id, actor: "Owner", actorRole: "owner", action: "approved → published" },
+  ]);
 }
 
 /** Keep vehicle galleries exactly in step with vehicle-gallery-data.ts —

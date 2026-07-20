@@ -25,7 +25,9 @@ export function CreateStaffForm() {
           <option value="admin">Admin — full access (except Team &amp; Performance)</option>
           <option value="sales">Sales — bookings &amp; enquiries</option>
           <option value="driver">Driver — assigned trips only</option>
-          <option value="hr">HR — performance tracking only</option>
+          <option value="hr">HR — performance &amp; recruitment</option>
+          <option value="hiring_manager">Hiring manager — assigned vacancies only</option>
+          <option value="assessor">Panel assessor — assigned candidates only</option>
           <option value="staff">Staff — tracked for performance, no sign-in</option>
         </select>
       </div>

@@ -198,6 +198,172 @@ export const kpiScores = pgTable("kpi_scores", {
 export type Kpi = typeof kpis.$inferSelect;
 export type KpiScore = typeof kpiScores.$inferSelect;
 
+/* ═══════════════ Recruitment module (Phase 1) ═══════════════ */
+
+/** A vacancy and its full configuration. Question/stage/eligibility/scoring
+ *  configs are JSONB; guarded edits after publication snapshot the previous
+ *  config into vacancy_audit. */
+export const vacancies = pgTable("vacancies", {
+  id: serial("id").primaryKey(),
+  reference: text("reference").notNull().unique(), // e.g. H06-VAC-0001
+  slug: text("slug").notNull().unique(), // public URL slug
+  title: text("title").notNull(),
+  department: text("department").notNull(),
+  hiringManager: text("hiring_manager"),
+  engagementType: text("engagement_type").notNull().default("full_time"),
+  location: text("location").notNull().default("Lagos, Nigeria"),
+  workArrangement: text("work_arrangement").notNull().default("on_site"),
+  openings: integer("openings").notNull().default(1),
+  summary: text("summary").notNull().default(""),
+  responsibilities: jsonb("responsibilities").$type<string[]>().notNull().default([]),
+  essentials: jsonb("essentials").$type<string[]>().notNull().default([]),
+  desirables: jsonb("desirables").$type<string[]>().notNull().default([]),
+  competencies: jsonb("competencies").$type<{ name: string; weight: number }[]>().notNull().default([]),
+  compensation: text("compensation"), // shown publicly only if compensationPublic
+  compensationPublic: boolean("compensation_public").notNull().default(false),
+  opensAt: timestamp("opens_at"),
+  closesAt: timestamp("closes_at"),
+  expectedStart: text("expected_start"),
+  questions: jsonb("questions")
+    .$type<{ id: string; label: string; type: "text" | "textarea" | "yes_no" | "link"; required: boolean; eligibility?: boolean }[]>()
+    .notNull()
+    .default([]),
+  requiredDocs: jsonb("required_docs").$type<{ cv: boolean; supporting: boolean; video: boolean; audio: boolean }>()
+    .notNull()
+    .default({ cv: true, supporting: false, video: false, audio: false }),
+  stages: jsonb("stages").$type<string[]>().notNull().default([]),
+  panel: jsonb("panel").$type<number[]>().notNull().default([]), // staff_users ids
+  privacyVersion: text("privacy_version").notNull().default("1.0"),
+  retentionDays: integer("retention_days").notNull().default(180),
+  status: text("status").notNull().default("draft"),
+  createdBy: text("created_by").notNull(),
+  approvedBy: text("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/** Every vacancy action: who, when, why, and the config it replaced. */
+export const vacancyAudit = pgTable("vacancy_audit", {
+  id: serial("id").primaryKey(),
+  vacancyId: integer("vacancy_id").notNull(),
+  actor: text("actor").notNull(),
+  actorRole: text("actor_role").notNull(),
+  action: text("action").notNull(),
+  reason: text("reason"),
+  previousConfig: jsonb("previous_config"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Candidate accounts — entirely separate from staff. Verified by email OTP. */
+export const candidates = pgTable("candidates", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  phone: text("phone"),
+  otpHash: text("otp_hash"),
+  otpExpiresAt: timestamp("otp_expires_at"),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** An application. `submitted` freezes the exact submitted version; later
+ *  candidate corrections live in application_amendments. */
+export const applications = pgTable("applications", {
+  id: serial("id").primaryKey(),
+  ref: text("ref").notNull().unique(), // APP-00001
+  vacancyId: integer("vacancy_id").notNull(),
+  candidateId: integer("candidate_id").notNull(),
+  status: text("status").notNull().default("draft"),
+  form: jsonb("form").$type<Record<string, unknown>>().notNull().default({}), // working draft
+  submitted: jsonb("submitted").$type<Record<string, unknown> | null>().default(null), // frozen at submission
+  submittedAt: timestamp("submitted_at"),
+  privacyVersion: text("privacy_version"),
+  privacyAcknowledgedAt: timestamp("privacy_acknowledged_at"),
+  talentPoolConsent: boolean("talent_pool_consent").notNull().default(false),
+  talentPoolConsentAt: timestamp("talent_pool_consent_at"),
+  lawfulBasis: text("lawful_basis").notNull().default("legitimate_interest"),
+  eligibilityResult: text("eligibility_result"), // pass | fail | manual
+  retentionExpiry: timestamp("retention_expiry"),
+  legalHold: boolean("legal_hold").notNull().default(false),
+  anonymisedAt: timestamp("anonymised_at"),
+  withdrawnAt: timestamp("withdrawn_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/** Versioned candidate corrections — the original is never overwritten. */
+export const applicationAmendments = pgTable("application_amendments", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Every status change: actor, timestamp, reason, override flag. */
+export const applicationAudit = pgTable("application_audit", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  actor: text("actor").notNull(),
+  actorRole: text("actor_role").notNull(),
+  fromStatus: text("from_status").notNull(),
+  toStatus: text("to_status").notNull(),
+  reason: text("reason"),
+  isOverride: boolean("is_override").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Uploaded files. storage_path is private; access only via signed URLs. */
+export const applicationFiles = pgTable("application_files", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  kind: text("kind").notNull(), // cv | supporting | video | audio
+  filename: text("filename").notNull(),
+  mime: text("mime").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  storagePath: text("storage_path").notNull(),
+  storageDriver: text("storage_driver").notNull(), // supabase | local
+  scanStatus: text("scan_status").notNull().default("not_scanned"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const fileAccessLog = pgTable("file_access_log", {
+  id: serial("id").primaryKey(),
+  fileId: integer("file_id").notNull(),
+  actor: text("actor").notNull(),
+  action: text("action").notNull(), // signed_url | denied
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Candidate-facing communications with delivery status. */
+export const candidateComms = pgTable("candidate_comms", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull(),
+  applicationId: integer("application_id"),
+  template: text("template").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull(), // sent | logged | failed
+  sentBy: text("sent_by").notNull().default("system"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Internal notes — never exposed to candidates. */
+export const applicationNotes = pgTable("application_notes", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  author: text("author").notNull(),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type Vacancy = typeof vacancies.$inferSelect;
+export type Candidate = typeof candidates.$inferSelect;
+export type Application = typeof applications.$inferSelect;
+export type ApplicationFile = typeof applicationFiles.$inferSelect;
+
 /** Marketing/notification list — every customer who books or enquires,
  *  whether or not their payment succeeded. */
 export const emailList = pgTable("email_list", {
