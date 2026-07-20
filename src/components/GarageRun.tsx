@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createRunAudio, type RunAudio } from "./garageRunAudio";
 
 /**
  * The H06 run — unlisted, on the 404 only. The G-Wagon sketch drives an
@@ -86,27 +87,43 @@ export function GarageRun() {
   const [best, setBest] = useState(0);
   const [lastScore, setLastScore] = useState(0);
   const [crashedBy, setCrashedBy] = useState<Kind | null>(null);
+  const [muted, setMuted] = useState(false);
   const phaseRef = useRef(phase);
+  const audioRef = useRef<RunAudio | null>(null);
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
 
   const game = useRef({
     y: 0, vy: 0, speed: BASE_SPEED, dist: 0, nextGap: 0,
-    obs: [] as Ob[], raf: 0, last: 0, swerveUntil: 0,
+    obs: [] as Ob[], raf: 0, last: 0, swerveUntil: 0, milestone: 0,
   });
 
   useEffect(() => {
     const t = setTimeout(() => {
       try {
         setBest(Number(localStorage.getItem("h06_run_best")) || 0);
+        const m = localStorage.getItem("h06_run_muted") === "1";
+        setMuted(m);
+        audioRef.current?.setMuted(m);
       } catch {}
     }, 0);
     return () => clearTimeout(t);
   }, []);
 
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    audioRef.current?.setMuted(next);
+    try {
+      localStorage.setItem("h06_run_muted", next ? "1" : "0");
+    } catch {}
+  };
+
   useEffect(() => {
     const g = game.current;
+    const audio = createRunAudio(false);
+    audioRef.current = audio;
 
     const clearObs = () => {
       for (const o of g.obs) o.el.remove();
@@ -138,6 +155,8 @@ export function GarageRun() {
 
     const crash = (ob: Ob) => {
       cancelAnimationFrame(g.raf);
+      audio.crash();
+      audio.stopDrive();
       const car = carRef.current;
       const stage = stageRef.current;
       // the driver is out of the car
@@ -219,7 +238,13 @@ export function GarageRun() {
         }
       }
 
-      if (scoreRef.current) scoreRef.current.textContent = String(Math.floor(g.dist / 10)).padStart(4, "0");
+      const metres = Math.floor(g.dist / 10);
+      const stage500 = Math.floor(metres / 500);
+      if (stage500 > g.milestone) {
+        g.milestone = stage500;
+        audio.milestone();
+      }
+      if (scoreRef.current) scoreRef.current.textContent = String(metres).padStart(4, "0");
       g.raf = requestAnimationFrame(frame);
     };
 
@@ -234,9 +259,11 @@ export function GarageRun() {
       g.dist = 0;
       g.nextGap = 480;
       g.swerveUntil = 0;
+      g.milestone = 0;
       g.last = performance.now();
       setCrashedBy(null);
       setPhase("running");
+      audio.startDrive();
       g.raf = requestAnimationFrame(frame);
     };
 
@@ -255,6 +282,7 @@ export function GarageRun() {
       const car = carRef.current;
       if (target && car) {
         g.swerveUntil = performance.now() + 470;
+        audio.swerve();
         const style = SWERVE_STYLES[Math.floor(Math.random() * SWERVE_STYLES.length)];
         car.classList.remove(...SWERVE_STYLES);
         void car.offsetWidth; // restart the animation
@@ -262,6 +290,7 @@ export function GarageRun() {
         setTimeout(() => car.classList.remove(style), 500);
       } else if (g.y === 0) {
         g.vy = JUMP_V;
+        audio.jump();
       }
     };
 
@@ -287,6 +316,7 @@ export function GarageRun() {
       window.removeEventListener("keydown", onKey);
       stage?.removeEventListener("pointerdown", onPointer);
       clearObs();
+      audio.setMuted(true); // tears the ambient down on unmount
     };
   }, []);
 
@@ -309,6 +339,22 @@ export function GarageRun() {
       <span ref={scoreRef} className="absolute right-1 top-1 font-mono text-xs tabular-nums text-muted">
         0000
       </span>
+      <button
+        type="button"
+        aria-label={muted ? "Unmute game sound" : "Mute game sound"}
+        className="absolute right-0 top-7 p-1 text-muted transition-colors hover:text-cream"
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          toggleMute();
+        }}
+      >
+        {muted ? (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="m16 9 5 6M21 9l-5 6" /></svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 6a9 9 0 0 1 0 12" /></svg>
+        )}
+      </button>
       {best > 0 && (
         <span className="absolute left-1 top-1 font-mono text-xs tabular-nums text-muted/60">
           best {String(best).padStart(4, "0")}
