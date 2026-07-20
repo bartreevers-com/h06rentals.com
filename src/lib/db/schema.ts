@@ -359,10 +359,94 @@ export const applicationNotes = pgTable("application_notes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/** HR eligibility screening — a human decision, never automated. The most
+ *  recent row is the current result; older rows preserve the history. */
+export const screenings = pgTable("screenings", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  result: text("result").notNull(), // eligible | not_eligible | needs_review
+  meetsEssentials: boolean("meets_essentials").notNull().default(false),
+  reason: text("reason").notNull(),
+  notes: text("notes"),
+  reviewer: text("reviewer").notNull(),
+  reviewedAt: timestamp("reviewed_at").notNull().defaultNow(),
+});
+
+/** One scorecard per assessor per application. Hidden from other assessors
+ *  until their own is submitted. Edits append to `revisions`, never erase. */
+export const scorecards = pgTable("scorecards", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  assessorId: integer("assessor_id").notNull(), // staff_users.id (0 = owner)
+  assessorName: text("assessor_name").notNull(),
+  scores: jsonb("scores").$type<Record<string, number>>().notNull().default({}), // competency id → 1..5
+  evidence: text("evidence").notNull().default(""),
+  strengths: text("strengths").notNull().default(""),
+  concerns: text("concerns").notNull().default(""),
+  recommendation: text("recommendation"), // strong_yes | yes | neutral | no
+  weightedTotal: integer("weighted_total"), // 0–100, computed server-side
+  submittedAt: timestamp("submitted_at"),
+  revisions: jsonb("revisions")
+    .$type<{ scores: Record<string, number>; weightedTotal: number | null; reason: string; at: string }[]>()
+    .notNull()
+    .default([]),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const interviews = pgTable("interviews", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  mode: text("mode").notNull().default("online"), // online | physical
+  locationOrLink: text("location_or_link").notNull().default(""),
+  interviewers: jsonb("interviewers").$type<number[]>().notNull().default([]), // staff_users ids
+  status: text("status").notNull().default("scheduled"), // scheduled | rescheduled | cancelled | completed
+  attendance: text("attendance"), // attended | no_show
+  reminderSentAt: timestamp("reminder_sent_at"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/** AI-assisted analysis — an assistant, never a decision-maker. Always
+ *  rendered with the mandatory human-review label. */
+export const aiAnalyses = pgTable("ai_analyses", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull(),
+  model: text("model").notNull(),
+  summary: text("summary").notNull(),
+  evidence: jsonb("evidence")
+    .$type<{ observation: string; source: string; quote: string }[]>()
+    .notNull()
+    .default([]),
+  missingInfo: jsonb("missing_info").$type<string[]>().notNull().default([]),
+  followUpQuestions: jsonb("follow_up_questions").$type<string[]>().notNull().default([]),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** General recruitment audit beyond status changes: views, screening,
+ *  interviews, scores, AI runs, finalist selection, owner decisions. */
+export const recruitmentEvents = pgTable("recruitment_events", {
+  id: serial("id").primaryKey(),
+  actor: text("actor").notNull(),
+  actorRole: text("actor_role").notNull(),
+  action: text("action").notNull(),
+  vacancyId: integer("vacancy_id"),
+  applicationId: integer("application_id"),
+  detail: text("detail"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export type Vacancy = typeof vacancies.$inferSelect;
 export type Candidate = typeof candidates.$inferSelect;
 export type Application = typeof applications.$inferSelect;
 export type ApplicationFile = typeof applicationFiles.$inferSelect;
+export type Screening = typeof screenings.$inferSelect;
+export type Scorecard = typeof scorecards.$inferSelect;
+export type Interview = typeof interviews.$inferSelect;
+export type AiAnalysis = typeof aiAnalyses.$inferSelect;
 
 /** Marketing/notification list — every customer who books or enquires,
  *  whether or not their payment succeeded. */

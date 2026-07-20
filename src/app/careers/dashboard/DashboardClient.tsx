@@ -133,16 +133,16 @@ export function ApplicationCard({ app }: { app: DashboardApp }) {
 
       <div className="mt-5 flex flex-wrap gap-3 border-t border-white/10 pt-4 text-xs">
         {isDraft && app.vacancyOpen && (
-          <Link href={`/careers/${app.vacancySlug}/apply`} className="btn btn-primary">
+          <Link href={`/careers/${app.vacancySlug}/apply`} className="btn btn-primary btn-sm">
             Continue application
           </Link>
         )}
         {!closed && !isDraft && (
           <>
-            <button className="btn" onClick={() => setAmending((v) => !v)}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setAmending((v) => !v)}>
               Send a correction
             </button>
-            <button className="btn" onClick={() => setConfirmWithdraw(true)}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmWithdraw(true)}>
               Withdraw
             </button>
           </>
@@ -159,7 +159,7 @@ export function ApplicationCard({ app }: { app: DashboardApp }) {
             value={amendText}
             onChange={(e) => setAmendText(e.target.value)}
           />
-          <button className="btn btn-primary" onClick={amend} disabled={busy || amendText.trim().length < 5}>
+          <button className="btn btn-primary btn-sm" onClick={amend} disabled={busy || amendText.trim().length < 5}>
             {busy ? "Sending…" : "Send correction"}
           </button>
         </div>
@@ -172,10 +172,10 @@ export function ApplicationCard({ app }: { app: DashboardApp }) {
             confirm by email. Your data is then deleted on our standard retention schedule.
           </p>
           <div className="mt-3 flex gap-3">
-            <button className="btn btn-primary" onClick={withdraw} disabled={busy}>
+            <button className="btn btn-primary btn-sm" onClick={withdraw} disabled={busy}>
               {busy ? "Withdrawing…" : "Yes, withdraw"}
             </button>
-            <button className="btn" onClick={() => setConfirmWithdraw(false)} disabled={busy}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setConfirmWithdraw(false)} disabled={busy}>
               Keep my application
             </button>
           </div>
@@ -189,7 +189,7 @@ export function SignOutButton() {
   const router = useRouter();
   return (
     <button
-      className="btn text-xs"
+      className="btn btn-ghost btn-sm"
       onClick={async () => {
         await fetch("/api/careers/otp", {
           method: "POST",

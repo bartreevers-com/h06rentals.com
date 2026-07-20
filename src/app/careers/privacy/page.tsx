@@ -115,7 +115,7 @@ export default async function RecruitmentPrivacyPage() {
         </section>
       </div>
 
-      <Link href="/careers" className="btn btn-primary mt-12">
+      <Link href="/careers" className="btn btn-primary btn-md mt-12">
         Back to careers
       </Link>
     </div>

@@ -284,84 +284,125 @@ export async function seedIfEmpty(db: Db) {
   await syncGalleries(db);
 }
 
-/** The launch vacancy: Founding Host & Brand Creator. Published and open,
- *  ready for real applications the moment the module deploys. */
+/** The launch vacancy: Podcast Host & Brand Creator — the voice of the
+ *  new H06 podcast and the on-camera face of the brand. Published and open.
+ *  Idempotent: creates on an empty DB; if the untouched original seed is
+ *  found (pre-podcast title), it is updated in place. */
+const PODCAST_VACANCY = {
+  title: "Podcast Host & Brand Creator",
+  department: "Brand & Experience",
+  hiringManager: "Owner",
+  engagementType: "full_time",
+  location: "Lekki, Lagos",
+  workArrangement: "hybrid",
+  openings: 1,
+  summary:
+    "Host the new H06 podcast and become the voice of the brand. Long-form conversation, sharp improvisation, real curiosity — on mic, on camera and everywhere H06 shows up. We care about presence and judgement, not a CV full of titles.",
+  responsibilities: [
+    "Host and produce the H06 podcast: plan guests, lead conversations, own the show's voice",
+    "Front H06 brand content across Instagram, TikTok and YouTube",
+    "Turn podcast moments into clips and campaigns with the marketing team",
+    "Welcome VIP clients at the showroom and on signature experiences",
+    "Represent H06 at events, launches and partner activations",
+  ],
+  essentials: [
+    "Exceptional conversational ability — you listen as well as you talk",
+    "Confident improviser: unscripted moments are where you shine",
+    "Clear, fluent spoken English on mic and on camera",
+    "Reliable and prepared — shows ship on schedule",
+    "Based in Lagos or able to relocate",
+  ],
+  desirables: [
+    "A portfolio of hosting, podcast, radio or presenting work",
+    "An existing audience or community",
+    "Experience in luxury, hospitality or automotive",
+    "Yoruba and/or Pidgin fluency",
+  ],
+  competencies: [
+    { name: "Conversation & listening", weight: 20 },
+    { name: "Improvisation", weight: 15 },
+    { name: "Intelligence & curiosity", weight: 15 },
+    { name: "Humour", weight: 10 },
+    { name: "Fluency & clarity", weight: 10 },
+    { name: "Reliability & preparation", weight: 10 },
+    { name: "Brand judgement", weight: 10 },
+    { name: "Commercial & content instinct", weight: 10 },
+  ],
+  compensation: "Competitive base + content performance bonus",
+  compensationPublic: false,
+  expectedStart: "September 2026",
+  questions: [
+    {
+      id: "q1",
+      label: "Why should you be the voice of H06? Tell us in your own words.",
+      type: "textarea" as const,
+      required: true,
+    },
+    {
+      id: "q2",
+      label: "Link to audio or video of you talking — hosting, a podcast, a voice note story, anything real",
+      type: "link" as const,
+      required: true,
+    },
+    {
+      id: "q3",
+      label: "Who would be your dream first podcast guest, and what would you ask them?",
+      type: "textarea" as const,
+      required: true,
+    },
+    {
+      id: "q4",
+      label: "Are you available to work evenings and weekends when recordings or VIP bookings require it?",
+      type: "yes_no" as const,
+      required: true,
+      eligibility: true,
+    },
+  ],
+  requiredDocs: { cv: true, supporting: false, video: true, audio: false },
+  stages: [
+    "Eligibility screening",
+    "Shortlist review",
+    "On-mic interview",
+    "Final assessment (live recording brief)",
+    "Owner review & offer",
+  ],
+};
+
 async function seedRecruitmentIfEmpty(db: Db) {
+  const { eq } = await import("drizzle-orm");
   const existing = await db.select({ n: sql<number>`count(*)` }).from(schema.vacancies);
-  if (Number(existing[0]?.n ?? 0) > 0) return;
+
+  if (Number(existing[0]?.n ?? 0) > 0) {
+    // one-time in-place upgrade of the untouched original seed to the podcast brief
+    const rows = await db
+      .select()
+      .from(schema.vacancies)
+      .where(eq(schema.vacancies.reference, "H06-VAC-0001"))
+      .limit(1);
+    const v = rows[0];
+    if (v && v.title === "Founding Host & Brand Creator") {
+      await db
+        .update(schema.vacancies)
+        .set({ ...PODCAST_VACANCY, updatedAt: new Date() })
+        .where(eq(schema.vacancies.id, v.id));
+      await db.insert(schema.vacancyAudit).values({
+        vacancyId: v.id,
+        actor: "System seed",
+        actorRole: "owner",
+        action: "updated: refocused as Podcast Host & Brand Creator (approved brief)",
+      });
+    }
+    return;
+  }
 
   const [vacancy] = await db
     .insert(schema.vacancies)
     .values({
+      ...PODCAST_VACANCY,
       reference: "H06-VAC-0001",
-      slug: "founding-host-brand-creator",
-      title: "Founding Host & Brand Creator",
-      department: "Brand & Experience",
-      hiringManager: "Owner",
-      engagementType: "full_time",
-      location: "Lekki, Lagos",
-      workArrangement: "hybrid",
-      openings: 1,
-      summary:
-        "Be the face and voice of H06. You'll host our guests and our audience — on camera, on the showroom floor, and everywhere the brand shows up. We're looking for presence, warmth and taste, not a CV full of titles.",
-      responsibilities: [
-        "Host and present H06 content: fleet features, guest experiences, behind-the-scenes",
-        "Own the on-camera identity of the brand across Instagram, TikTok and YouTube",
-        "Welcome VIP clients at the showroom and on signature experiences",
-        "Shape the H06 content calendar with the owner and marketing",
-        "Represent H06 at events, launches and partner activations",
-      ],
-      essentials: [
-        "Exceptional on-camera presence and spoken English",
-        "Genuine feel for hospitality — you make people comfortable",
-        "Comfortable creating content on a phone-first workflow",
-        "Based in Lagos or able to relocate",
-      ],
-      desirables: [
-        "An existing audience or portfolio of created content",
-        "Experience in luxury, hospitality or automotive",
-        "Yoruba and/or Pidgin fluency",
-      ],
-      competencies: [
-        { name: "On-camera presence", weight: 3 },
-        { name: "Hospitality instinct", weight: 3 },
-        { name: "Content craft", weight: 2 },
-        { name: "Reliability & professionalism", weight: 2 },
-      ],
-      compensation: "Competitive base + content performance bonus",
-      compensationPublic: false,
+      slug: "podcast-host-brand-creator",
       opensAt: new Date("2026-07-19T00:00:00Z"),
       closesAt: new Date("2026-08-31T23:59:59Z"),
-      expectedStart: "September 2026",
-      questions: [
-        {
-          id: "q1",
-          label: "Why H06, and why you? Tell us in your own voice.",
-          type: "textarea",
-          required: true,
-        },
-        {
-          id: "q2",
-          label: "Link to the piece of content (yours or anyone's) that best shows the energy you'd bring",
-          type: "link",
-          required: true,
-        },
-        {
-          id: "q3",
-          label: "Are you available to work evenings and weekends when shoots or VIP bookings require it?",
-          type: "yes_no",
-          required: true,
-          eligibility: true,
-        },
-      ],
-      requiredDocs: { cv: true, supporting: false, video: true, audio: false },
-      stages: [
-        "Eligibility screening",
-        "Shortlist review",
-        "On-camera interview",
-        "Final assessment (live content brief)",
-        "Owner review & offer",
-      ],
       panel: [],
       privacyVersion: "1.0",
       retentionDays: 180,

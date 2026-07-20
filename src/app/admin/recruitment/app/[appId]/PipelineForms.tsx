@@ -81,10 +81,10 @@ export function CommForm({
     <form action={formAction} className="space-y-3">
       <input type="hidden" name="id" value={applicationId} />
       <div className="flex gap-2">
-        <button type="button" className={`btn btn-sm ${mode === "template" ? "btn-primary" : ""}`} onClick={() => setMode("template")}>
+        <button type="button" className={`btn btn-sm ${mode === "template" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("template")}>
           Template
         </button>
-        <button type="button" className={`btn btn-sm ${mode === "manual" ? "btn-primary" : ""}`} onClick={() => setMode("manual")}>
+        <button type="button" className={`btn btn-sm ${mode === "manual" ? "btn-primary" : "btn-ghost"}`} onClick={() => setMode("manual")}>
           Manual message
         </button>
       </div>

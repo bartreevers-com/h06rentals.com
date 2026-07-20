@@ -17,6 +17,9 @@ export interface TemplateVars {
   applicationRef?: string;
   closingDate?: string;
   detail?: string; // free slot for missing-info / instructions
+  interviewDate?: string;
+  interviewMode?: string; // "online" | "in person"
+  interviewLocation?: string; // meeting link or address
 }
 
 const SIGNATURE = ["", "H06 Rentals — Careers", `${SITE_URL}/careers`].join("\n");
@@ -117,6 +120,108 @@ export const COMM_TEMPLATES: Record<
         ``,
         `As requested, your application ${v.applicationRef} for ${v.vacancyTitle} has been withdrawn.`,
         `If this was a mistake, contact us and we can look into it.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  interview_invitation: {
+    label: "Interview invitation",
+    subject: (v) => `Interview invitation — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `We'd like to invite you to interview for ${v.vacancyTitle} (${v.applicationRef}).`,
+        ``,
+        `When: ${v.interviewDate}`,
+        `Format: ${v.interviewMode}`,
+        `Where: ${v.interviewLocation}`,
+        ``,
+        v.detail ?? `If the time doesn't work, reply and we'll find another.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  interview_reschedule: {
+    label: "Interview rescheduled",
+    subject: (v) => `Your interview has been rescheduled — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `Your interview for ${v.vacancyTitle} (${v.applicationRef}) has been rescheduled.`,
+        ``,
+        `New time: ${v.interviewDate}`,
+        `Format: ${v.interviewMode}`,
+        `Where: ${v.interviewLocation}`,
+        ``,
+        `Sorry for any inconvenience — reply if the new time doesn't work.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  interview_cancelled: {
+    label: "Interview cancelled",
+    subject: (v) => `Your interview has been cancelled — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `Your interview for ${v.vacancyTitle} (${v.applicationRef}) scheduled for ${v.interviewDate} has been cancelled.`,
+        ``,
+        v.detail ?? `We'll be in touch about next steps.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  interview_reminder: {
+    label: "Interview reminder",
+    subject: () => `Reminder: your H06 interview is coming up`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `A friendly reminder about your interview for ${v.vacancyTitle} (${v.applicationRef}).`,
+        ``,
+        `When: ${v.interviewDate}`,
+        `Format: ${v.interviewMode}`,
+        `Where: ${v.interviewLocation}`,
+        ``,
+        `See you there.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  finalist_notification: {
+    label: "Finalist notification",
+    subject: (v) => `You're a finalist — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `You've reached the final stage for ${v.vacancyTitle} (${v.applicationRef}).`,
+        `The final decision now sits with our leadership — we'll come back to you shortly.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  offer_message: {
+    label: "Offer",
+    subject: (v) => `An offer from H06 — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `Congratulations — we'd like to offer you the ${v.vacancyTitle} role.`,
+        ``,
+        v.detail ?? `We'll follow up with the details and next steps.`,
+        SIGNATURE,
+      ].join("\n"),
+  },
+  reserve_message: {
+    label: "Reserve list",
+    subject: (v) => `Your application — ${v.vacancyTitle}`,
+    body: (v) =>
+      [
+        `Dear ${v.firstName ?? "candidate"},`,
+        ``,
+        `Thank you for the time you gave the process for ${v.vacancyTitle}. We haven't been able to`,
+        `offer you the role right now, but we were impressed — with your permission we've placed you`,
+        `on our reserve list and will contact you first if the position reopens.`,
         SIGNATURE,
       ].join("\n"),
   },

@@ -76,7 +76,7 @@ Candidate (all require the candidate session unless noted):
 |---|---|---|
 | `/api/careers/otp` | POST | `{action:"start",email}` send code · `{action:"verify",email,code}` create session · `{action:"signout"}` |
 | `/api/careers/draft` | PUT | Autosave `{vacancyId, form}`; creates the draft application on first save |
-| `/api/careers/upload` | POST | multipart `{applicationId, kind, file}`; draft-stage only; replaces prior file of the kind |
+| `/api/careers/upload` | POST | Two-step direct upload in production (Vercel caps request bodies at ~4.5 MB): JSON `{action:"sign",…}` validates and returns a one-time signed URL the browser PUTs the file to, then `{action:"confirm",…}` verifies the object landed and records it. Local dev accepts classic multipart. Draft-stage only; replaces prior file of the kind |
 | `/api/careers/submit` | POST | Final submission; validates questions + required uploads + declarations; freezes snapshot; runs eligibility screen; emails confirmation |
 | `/api/careers/withdraw` | POST | `{applicationId}`; audited; sets retention expiry; confirms by email |
 | `/api/careers/amend` | POST | `{applicationId, note}`; versioned correction, original preserved |
@@ -171,3 +171,117 @@ the application APIs refuse new submissions.
   in (codes are still logged server-side for support to assist manually).
 - PGlite dev database is single-process: never open `.data/pglite` from a second
   process while the dev server runs (it corrupts the WAL — learned the hard way).
+
+---
+
+# Phase 2 — Assessment, scoring, AI assistant, owner decision (2026-07-20)
+
+The first vacancy is now **Podcast Host & Brand Creator** (`H06-VAC-0001`,
+published; existing deployments upgrade the seeded vacancy in place on boot).
+
+## What was added
+
+- **Human eligibility screening** — HR records Eligible / Not eligible / Needs
+  review with a mandatory reason, essentials checkbox, notes, reviewer and
+  timestamp (`screenings`, full history kept). The automatic yes/no question
+  screen is only a pre-flag; no candidate is ever rejected automatically.
+- **Interview scheduling** — date/time, online or in-person, link/location,
+  interviewer assignment, reschedule / cancel / attended / no-show, invitation +
+  reschedule + cancellation emails, and a daily Vercel cron
+  (`/api/cron/recruitment`, 07:00 UTC, `vercel.json`) that emails reminders for
+  interviews within 24 hours. Optional: set `CRON_SECRET` in Vercel to lock the
+  endpoint.
+- **Structured scorecards** — the approved competency framework
+  (Conversation & listening 20%, Improvisation 15%, Intelligence & curiosity 15%,
+  Humour 10%, Fluency & clarity 10%, Reliability & preparation 10%,
+  Brand judgement 10%, Commercial & content instinct 10%), each scored 1–5 with
+  evidence, strengths, concerns and an overall recommendation. The weighted
+  total (0–100) is computed server-side (and live in the UI).
+- **Independent panel scoring** — assessors cannot see anyone else's scores
+  until their own scorecard is submitted (enforced server-side). HR/owner see
+  the score matrix, per-competency averages, average weighted total, and ⚑ flags
+  where assessors disagreed by 2+ points. Submitted scorecards can only be
+  edited by their author, with a written reason; every previous version is
+  preserved in `revisions`.
+- **AI assistant (assistant only)** — with `ANTHROPIC_API_KEY` set in Vercel,
+  HR/owner can generate an evidence-linked summary: every observation quotes
+  the candidate's actual words and names its source; plus missing-information
+  and follow-up-question lists. The system prompt forbids scoring, ranking,
+  rejecting, judging appearance/accent/personality, or inferring protected
+  characteristics, and the output is always rendered under the label
+  *"AI-assisted summary. This is not a hiring decision and must be reviewed by
+  a human."* Video/audio are NOT transcribed (no speech-to-text provider yet) —
+  the analysis covers written answers only, and says so.
+- **Finalists & comparison** — HR selects up to three (each move walks the
+  audited pipeline one stage at a time), candidates are emailed, and
+  `/admin/recruitment/[id]/compare` shows scores, per-competency averages,
+  screening result, strengths/concerns, panel recommendations, AI summary,
+  availability, expected compensation and conflict declarations side by side —
+  with the explicit note that the top score doesn't automatically win.
+- **Owner decision** — approve (→ offer email), reserve, request information,
+  return to HR, or reject all; a written reason is demanded when approving
+  against the panel's top score (and for every non-approve action). The
+  decision never edits or deletes scorecards.
+- **Recruitment dashboard** — open vacancies, applications by stage, interviews
+  in the next 7 days, scorecards outstanding, finalists awaiting the owner,
+  hired/rejected/withdrawn.
+- **Extended audit** — `recruitment_events` records candidate views, screening
+  decisions, interview actions, score submissions and changes, AI runs,
+  finalist selections, owner decisions, retention changes and reminder sends —
+  alongside the existing status-change audit.
+- **Branded emails** — every email (recruitment and booking) now renders in the
+  H06 template: emerald-on-ink, brand mark, footer. Plain-text alternative
+  always included.
+- **Application form additions** — availability (required) and expected
+  compensation (optional).
+- **Production uploads fixed** — Vercel caps request bodies at ~4.5 MB, so
+  uploads now go **directly from the browser to Supabase Storage** via one-time
+  signed upload URLs (`sign` → direct PUT → `confirm`, which verifies the object
+  actually landed and its size). Local dev still uses simple multipart.
+
+## Administrator guide (the 5-minute version)
+
+**HR runs the process; the Owner decides.**
+
+1. **Vacancy**: Recruitment → New vacancy → fill the brief → Submit for review.
+   The Owner approves; HR publishes. The page appears at `/careers`.
+2. **Applications arrive** — dashboard counts them; each opens from the vacancy.
+3. **Screen** every application: Eligible / Not eligible / Needs review, with a
+   reason. Then advance the pipeline (each move asks for a reason).
+4. **Interview**: schedule from the candidate page — the invitation email goes
+   out automatically; reminders send themselves the day before.
+5. **Score**: every panel member opens the candidate and submits their own
+   scorecard. Nobody sees anyone else's until they've submitted. The weighted
+   total is automatic.
+6. **Finalists**: from the vacancy page tick up to three → "Send to the Owner".
+7. **Decide**: the Owner opens Compare finalists and approves / reserves /
+   returns / rejects. The offer email sends on approval.
+8. **Afterwards**: rejected/reserve candidates get their retention date
+   automatically; expired ones appear in the Owner's deletion-review queue —
+   nothing is deleted without a click.
+
+Environment variables that matter: `SUPABASE_SERVICE_ROLE_KEY` (file storage —
+already set), `RESEND_API_KEY` (email — already set), `ANTHROPIC_API_KEY`
+(enables the AI assistant — **add this to use AI summaries**), `CRON_SECRET`
+(optional, locks the cron endpoint).
+
+## Phase 2 test results (2026-07-20, production build, local)
+
+- 25/25 automated tests pass (`npm test`): state machine, retention, competency
+  weights (sum = 100), weighted totals (all-5s = 100, all-1s = 20), incomplete
+  scorecards rejected, per-competency averaging, 2+ point disagreement flags.
+- Manual end-to-end on a fresh database: candidate applied on the podcast
+  vacancy (with availability + expected compensation) → HR screened *Eligible*
+  with reason → interview scheduled (invitation email logged) → scorecard
+  submitted (weighted total 84/100, matching the hand-calculated value) →
+  finalist selected (notification email) → Owner approved (offer email) —
+  final status `conditional_offer`, and the event log recorded:
+  candidate_viewed ×5, screening, interview_scheduled, score_submitted,
+  finalists_submitted, owner_decision: approve.
+- Cron endpoint returns `{ok, remindersSent}`; reminder window (24 h) verified
+  by inspection.
+- Not exercised live: AI generation (needs `ANTHROPIC_API_KEY`; the
+  not-configured error path returns a friendly message) and multi-assessor
+  blind view (single-assessor environment; the gate is a single server-side
+  condition — assessors get aggregate visibility only after their own
+  `submitted_at` is set).

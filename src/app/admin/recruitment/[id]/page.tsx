@@ -17,8 +17,10 @@ import {
   type StaffRecruitRole,
   type VacancyStatus,
 } from "@/lib/recruitment/workflow";
+import { scorecards as scorecardsTable } from "@/lib/db/schema";
 import { duplicateVacancyAction, updateVacancyAction, vacancyStatusAction } from "../actions";
 import { VacancyForm } from "../VacancyForm";
+import { FinalistSelect } from "./FinalistForms";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,26 @@ export default async function VacancyAdminPage({ params }: { params: Promise<{ i
         .filter((m): m is { to: VacancyStatus; check: { ok: true; requiresReason: boolean } } => m.check.ok)
     : [];
 
+  // finalist selection: candidates far enough along, with their panel averages
+  const finalistPool = apps.filter(({ application: a }) =>
+    ["interview", "final_assessment"].includes(a.status),
+  );
+  const finalistCount = apps.filter(({ application: a }) =>
+    ["finalist", "conditional_offer", "hired", "reserve"].includes(a.status),
+  ).length;
+  const poolCards =
+    finalistPool.length > 0
+      ? await db
+          .select()
+          .from(scorecardsTable)
+          .where(inArray(scorecardsTable.applicationId, finalistPool.map(({ application: a }) => a.id)))
+      : [];
+  const avgFor = (appId: number) => {
+    const cards = poolCards.filter((c) => c.applicationId === appId && c.submittedAt);
+    if (cards.length === 0) return null;
+    return Math.round(cards.reduce((s, c) => s + (c.weightedTotal ?? 0), 0) / cards.length);
+  };
+
   return (
     <div>
       <Link href="/admin/recruitment" className="text-xs uppercase tracking-widest text-muted hover:text-cream">
@@ -76,13 +98,13 @@ export default async function VacancyAdminPage({ params }: { params: Promise<{ i
           <h1 className="display mt-1 text-2xl text-cream">{vacancy.title}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`/careers/${vacancy.slug}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm">
+          <a href={`/careers/${vacancy.slug}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
             {["published", "paused", "closed"].includes(vacancy.status) ? "Public page ↗" : "Preview ↗"}
           </a>
           {canManage && (
             <form action={duplicateVacancyAction}>
               <input type="hidden" name="id" value={vacancy.id} />
-              <button className="btn btn-sm">Duplicate</button>
+              <button className="btn btn-ghost btn-sm">Duplicate</button>
             </form>
           )}
         </div>
@@ -148,6 +170,39 @@ export default async function VacancyAdminPage({ params }: { params: Promise<{ i
           ))}
         </div>
       </div>
+
+      {/* finalists */}
+      {canManage && (finalistPool.length > 0 || finalistCount > 0) && (
+        <div className="mt-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="eyebrow">Finalists</h2>
+            {finalistCount > 0 && (
+              <Link href={`/admin/recruitment/${vacancy.id}/compare`} className="btn btn-primary btn-sm">
+                Compare finalists ({finalistCount}) →
+              </Link>
+            )}
+          </div>
+          {finalistPool.length > 0 && (
+            <div className="glass mt-3 p-5">
+              <p className="mb-3 text-xs text-muted">
+                Select up to three from interview / final assessment to send to the Owner.
+              </p>
+              <FinalistSelect
+                vacancyId={vacancy.id}
+                candidates={finalistPool.map(({ application: a, candidate: c }) => ({
+                  id: a.id,
+                  name: a.anonymisedAt
+                    ? "Anonymised"
+                    : `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim() || c.email,
+                  ref: a.ref,
+                  status: a.status,
+                  avgScore: avgFor(a.id),
+                }))}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* edit */}
       {canManage && (

@@ -27,7 +27,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ slug: st
           <p className="mt-3 text-sm text-muted">
             {vacancy.title} is no longer accepting applications.
           </p>
-          <Link href="/careers" className="btn btn-primary mt-6">
+          <Link href="/careers" className="btn btn-primary btn-md mt-6">
             See open roles
           </Link>
         </div>

@@ -153,6 +153,37 @@ export function ApplyForm({
   }
 
   /* ── uploads ──────────────────────────────────────────────── */
+
+  function clearProgress(kind: string) {
+    setUploading((u) => {
+      const next = { ...u };
+      delete next[kind];
+      return next;
+    });
+  }
+
+  /** XHR with upload progress; resolves {status, body} or rejects on network error. */
+  function xhrSend(opts: {
+    method: string;
+    url: string;
+    body: File | FormData;
+    contentType?: string;
+    kind: string;
+  }): Promise<{ status: number; text: string }> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(opts.method, opts.url);
+      if (opts.contentType) xhr.setRequestHeader("Content-Type", opts.contentType);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable)
+          setUploading((u) => ({ ...u, [opts.kind]: Math.round((e.loaded / e.total) * 100) }));
+      };
+      xhr.onload = () => resolve({ status: xhr.status, text: xhr.responseText });
+      xhr.onerror = () => reject(new Error("network"));
+      xhr.send(opts.body);
+    });
+  }
+
   async function upload(kind: string, file: File) {
     setError("");
     let appId = applicationId;
@@ -161,46 +192,76 @@ export function ApplyForm({
       setError("Could not create your draft — please try again");
       return;
     }
-    const data = new FormData();
-    data.append("applicationId", String(appId));
-    data.append("kind", kind);
-    data.append("file", file);
+    setUploading((u) => ({ ...u, [kind]: 0 }));
+    try {
+      // ask the server how to upload (and validate before any bytes move)
+      const signRes = await fetch("/api/careers/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sign",
+          applicationId: appId,
+          kind,
+          filename: file.name,
+          mime: file.type,
+          size: file.size,
+        }),
+      });
+      const sign = await signRes.json();
+      if (!signRes.ok) {
+        setError(sign.error ?? "Upload failed — please try again");
+        return;
+      }
 
-    await new Promise<void>((resolve) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/careers/upload");
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) setUploading((u) => ({ ...u, [kind]: Math.round((e.loaded / e.total) * 100) }));
-      };
-      xhr.onload = () => {
-        setUploading((u) => {
-          const next = { ...u };
-          delete next[kind];
-          return next;
-        });
-        try {
-          const body = JSON.parse(xhr.responseText);
-          if (xhr.status === 200) {
-            setFiles((f) => [...f.filter((x) => x.kind !== kind), { id: body.fileId, kind, filename: body.filename }]);
-          } else {
-            setError(body.error ?? "Upload failed");
-          }
-        } catch {
-          setError("Upload failed");
+      if (sign.mode === "direct") {
+        // large files go straight to private storage, not through our server
+        const put = await xhrSend({ method: "PUT", url: sign.uploadUrl, body: file, contentType: file.type, kind });
+        if (put.status < 200 || put.status >= 300) {
+          setError("The file didn't reach storage — please try again");
+          return;
         }
-        resolve();
-      };
-      xhr.onerror = () => {
-        setUploading((u) => {
-          const next = { ...u };
-          delete next[kind];
-          return next;
+        const confirmRes = await fetch("/api/careers/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "confirm",
+            applicationId: appId,
+            kind,
+            storagePath: sign.storagePath,
+            filename: file.name,
+            mime: file.type,
+            size: file.size,
+          }),
         });
-        setError("Upload failed — check your connection");
-        resolve();
-      };
-      xhr.send(data);
-    });
+        const confirmed = await confirmRes.json();
+        if (!confirmRes.ok) {
+          setError(confirmed.error ?? "Upload failed — please try again");
+          return;
+        }
+        setFiles((f) => [
+          ...f.filter((x) => x.kind !== kind),
+          { id: confirmed.fileId, kind, filename: confirmed.filename },
+        ]);
+        return;
+      }
+
+      // local-dev fallback: classic multipart through the server
+      const data = new FormData();
+      data.append("applicationId", String(appId));
+      data.append("kind", kind);
+      data.append("file", file);
+      const res = await xhrSend({ method: "POST", url: "/api/careers/upload", body: data, kind });
+      const body = JSON.parse(res.text);
+      if (res.status === 200) {
+        setFiles((f) => [...f.filter((x) => x.kind !== kind), { id: body.fileId, kind, filename: body.filename }]);
+      } else {
+        setError(body.error ?? "Upload failed");
+      }
+    } catch {
+      setError("Upload failed — check your connection and try again");
+    } finally {
+      clearProgress(kind);
+    }
   }
 
   /* ── validation per step ──────────────────────────────────── */
@@ -212,6 +273,7 @@ export function ApplyForm({
       if (!form.location?.trim()) return "Please tell us where you're based";
     }
     if (step === 2) {
+      if (!form.availability?.trim()) return "Please tell us your availability";
       if (!form.rightToWork) return "Please confirm your right to work";
       if (!form.locationWilling) return "Please answer the location question";
       if (!form.conflictOfInterest) return "Please answer the conflict of interest question";
@@ -291,7 +353,7 @@ export function ApplyForm({
           Your application <span className="text-cream">{existing?.ref}</span> for this role was
           submitted. You can track it, withdraw, or send a correction from your dashboard.
         </p>
-        <Link href="/careers/dashboard" className="btn btn-primary mt-6">
+        <Link href="/careers/dashboard" className="btn btn-primary btn-md mt-6">
           Go to my dashboard
         </Link>
       </div>
@@ -310,10 +372,10 @@ export function ApplyForm({
           date and will keep you posted at each stage.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <Link href="/careers/dashboard" className="btn btn-primary">
+          <Link href="/careers/dashboard" className="btn btn-primary btn-md">
             Track my application
           </Link>
-          <Link href="/careers" className="btn">
+          <Link href="/careers" className="btn btn-ghost btn-md">
             Back to careers
           </Link>
         </div>
@@ -363,7 +425,7 @@ export function ApplyForm({
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                 />
-                <button className="btn btn-primary" onClick={startOtp} disabled={busy || !email.includes("@")}>
+                <button className="btn btn-primary btn-md" onClick={startOtp} disabled={busy || !email.includes("@")}>
                   {busy ? "Sending…" : "Send code"}
                 </button>
               </div>
@@ -385,7 +447,7 @@ export function ApplyForm({
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
                   />
-                  <button className="btn btn-primary" onClick={verifyOtp} disabled={busy || otpCode.length !== 6}>
+                  <button className="btn btn-primary btn-md" onClick={verifyOtp} disabled={busy || otpCode.length !== 6}>
                     {busy ? "Checking…" : "Verify"}
                   </button>
                 </div>
@@ -464,6 +526,14 @@ export function ApplyForm({
                 </select>
               </div>
             </div>
+            <div>
+              <label className="eyebrow mb-1.5 block">Your availability *</label>
+              <input className="field w-full" value={form.availability ?? ""} onChange={(e) => set("availability", e.target.value)} placeholder="e.g. Available from September, evenings and weekends fine" />
+            </div>
+            <div>
+              <label className="eyebrow mb-1.5 block">Expected compensation (optional)</label>
+              <input className="field w-full" value={form.expectedCompensation ?? ""} onChange={(e) => set("expectedCompensation", e.target.value)} placeholder="A range is fine — this never disqualifies you" />
+            </div>
             <YesNo label="Do you have the legal right to work in Nigeria? *" value={form.rightToWork} onChange={(v) => set("rightToWork", v)} />
             <YesNo label="Are you able to work from our Lekki, Lagos base as the role requires? *" value={form.locationWilling} onChange={(v) => set("locationWilling", v)} />
             <YesNo label="Do you have any conflict of interest with H06 (e.g. work for a competitor, family ties to the business)? *" value={form.conflictOfInterest} onChange={(v) => set("conflictOfInterest", v)} />
@@ -524,7 +594,7 @@ export function ApplyForm({
                           <p className="mt-1.5 text-xs text-emerald-glow">✓ {uploaded.filename}</p>
                         )}
                       </div>
-                      <label className="btn cursor-pointer">
+                      <label className="btn btn-ghost btn-sm cursor-pointer">
                         {uploaded ? "Replace" : "Choose file"}
                         <input
                           type="file"
@@ -611,10 +681,10 @@ export function ApplyForm({
         {/* nav */}
         {step > 0 && step < 5 && (
           <div className="mt-8 flex justify-between border-t border-white/10 pt-5">
-            <button className="btn" onClick={() => setStep((s) => Math.max(s - 1, 1))} disabled={step === 1}>
+            <button className="btn btn-ghost btn-md" onClick={() => setStep((s) => Math.max(s - 1, 1))} disabled={step === 1}>
               Back
             </button>
-            <button className="btn btn-primary" onClick={next}>
+            <button className="btn btn-primary btn-md" onClick={next}>
               Continue
             </button>
           </div>
@@ -634,7 +704,7 @@ function YesNo({ label, value, onChange }: { label: string; value: string | unde
             key={v}
             type="button"
             onClick={() => onChange(v)}
-            className={`btn ${value === v ? "btn-primary" : ""}`}
+            className={`btn btn-md ${value === v ? "btn-primary" : "btn-ghost"}`}
           >
             {v === "yes" ? "Yes" : "No"}
           </button>

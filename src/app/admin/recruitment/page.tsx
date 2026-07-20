@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { and, eq, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { getSession } from "@/lib/admin-auth";
 import { getDb } from "@/lib/db";
-import { applications, vacancies } from "@/lib/db/schema";
+import { applications, interviews, scorecards, vacancies } from "@/lib/db/schema";
 import { isRecruitRole, staffCanSeeVacancy } from "@/lib/recruitment/repo";
 import { anonymiseApplicationAction } from "./actions";
 
@@ -37,6 +37,64 @@ export default async function RecruitmentPage() {
 
   const canManage = ["owner", "hr"].includes(session.role);
 
+  // dashboard numbers
+  const statusCount = async (statuses: string[]) => {
+    const [row] = await db
+      .select({ n: sql<number>`count(*)` })
+      .from(applications)
+      .where(inArray(applications.status, statuses));
+    return Number(row?.n ?? 0);
+  };
+  const now = new Date();
+  const week = new Date(now.getTime() + 7 * 86400_000);
+  const stats = canManage
+    ? {
+        "Open vacancies": allVacancies.filter((v) => v.status === "published").length,
+        "Total applications": await statusCount([
+          "submitted", "screening", "shortlisted", "interview", "final_assessment",
+          "finalist", "owner_review", "conditional_offer", "hired", "reserve", "rejected", "withdrawn",
+        ]),
+        "Awaiting screening": await statusCount(["submitted", "screening"]),
+        Shortlisted: await statusCount(["shortlisted"]),
+        "Interviews (7 days)": Number(
+          (
+            await db
+              .select({ n: sql<number>`count(*)` })
+              .from(interviews)
+              .where(
+                and(
+                  inArray(interviews.status, ["scheduled", "rescheduled"]),
+                  gte(interviews.scheduledAt, now),
+                  lte(interviews.scheduledAt, week),
+                ),
+              )
+          )[0]?.n ?? 0,
+        ),
+        "Scorecards outstanding": await (async () => {
+          const inAssessment = await db
+            .select({ id: applications.id })
+            .from(applications)
+            .where(inArray(applications.status, ["interview", "final_assessment"]));
+          if (inAssessment.length === 0) return 0;
+          const submitted = await db
+            .select({ applicationId: scorecards.applicationId })
+            .from(scorecards)
+            .where(
+              and(
+                inArray(scorecards.applicationId, inAssessment.map((a) => a.id)),
+                sql`${scorecards.submittedAt} IS NOT NULL`,
+              ),
+            );
+          const scored = new Set(submitted.map((s) => s.applicationId));
+          return inAssessment.filter((a) => !scored.has(a.id)).length;
+        })(),
+        "Finalists awaiting Owner": await statusCount(["finalist"]),
+        Hired: await statusCount(["hired"]),
+        Rejected: await statusCount(["rejected"]),
+        Withdrawn: await statusCount(["withdrawn"]),
+      }
+    : null;
+
   // retention review queue — owner only
   const expired =
     session.role === "owner"
@@ -65,11 +123,22 @@ export default async function RecruitmentPage() {
           </p>
         </div>
         {canManage && (
-          <Link href="/admin/recruitment/new" className="btn btn-primary">
+          <Link href="/admin/recruitment/new" className="btn btn-primary btn-md">
             New vacancy
           </Link>
         )}
       </div>
+
+      {stats && (
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {Object.entries(stats).map(([label, value]) => (
+            <div key={label} className="glass-subtle p-4">
+              <p className="text-2xl font-semibold text-cream">{value}</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-widest text-muted">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {session.role === "owner" && expired.length > 0 && (
         <div className="glass-subtle mt-6 border-amber-400/30 p-5">
@@ -87,7 +156,7 @@ export default async function RecruitmentPage() {
                 </Link>
                 <form action={anonymiseApplicationAction}>
                   <input type="hidden" name="id" value={a.id} />
-                  <button className="btn btn-sm">Anonymise now</button>
+                  <button className="btn btn-ghost btn-sm">Anonymise now</button>
                 </form>
               </div>
             ))}

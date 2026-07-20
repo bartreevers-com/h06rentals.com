@@ -49,7 +49,7 @@ export function CandidateSignIn() {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
-          <button className="btn btn-primary w-full" onClick={start} disabled={busy || !email.includes("@")}>
+          <button className="btn btn-primary btn-md w-full" onClick={start} disabled={busy || !email.includes("@")}>
             {busy ? "Sending…" : "Send code"}
           </button>
         </>
@@ -67,7 +67,7 @@ export function CandidateSignIn() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
           />
-          <button className="btn btn-primary w-full" onClick={verify} disabled={busy || code.length !== 6}>
+          <button className="btn btn-primary btn-md w-full" onClick={verify} disabled={busy || code.length !== 6}>
             {busy ? "Checking…" : "Sign in"}
           </button>
           <button className="w-full text-xs text-muted hover:text-cream" onClick={() => setSent(false)}>

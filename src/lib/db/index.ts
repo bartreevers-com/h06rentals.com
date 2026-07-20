@@ -341,6 +341,68 @@ CREATE TABLE IF NOT EXISTS application_notes (
   note TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS screenings (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  result TEXT NOT NULL,
+  meets_essentials BOOLEAN NOT NULL DEFAULT FALSE,
+  reason TEXT NOT NULL,
+  notes TEXT,
+  reviewer TEXT NOT NULL,
+  reviewed_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS scorecards (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  assessor_id INTEGER NOT NULL,
+  assessor_name TEXT NOT NULL,
+  scores JSONB NOT NULL DEFAULT '{}',
+  evidence TEXT NOT NULL DEFAULT '',
+  strengths TEXT NOT NULL DEFAULT '',
+  concerns TEXT NOT NULL DEFAULT '',
+  recommendation TEXT,
+  weighted_total INTEGER,
+  submitted_at TIMESTAMP,
+  revisions JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(application_id, assessor_id)
+);
+CREATE TABLE IF NOT EXISTS interviews (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  scheduled_at TIMESTAMP NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'online',
+  location_or_link TEXT NOT NULL DEFAULT '',
+  interviewers JSONB NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  attendance TEXT,
+  reminder_sent_at TIMESTAMP,
+  created_by TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS ai_analyses (
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  evidence JSONB NOT NULL DEFAULT '[]',
+  missing_info JSONB NOT NULL DEFAULT '[]',
+  follow_up_questions JSONB NOT NULL DEFAULT '[]',
+  created_by TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS recruitment_events (
+  id SERIAL PRIMARY KEY,
+  actor TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  action TEXT NOT NULL,
+  vacancy_id INTEGER,
+  application_id INTEGER,
+  detail TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 CREATE TABLE IF NOT EXISTS email_list (
   id SERIAL PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,

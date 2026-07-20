@@ -111,6 +111,30 @@ export async function storeFile(storagePath: string, data: Buffer, mime: string)
   fs.writeFileSync(full, data);
 }
 
+/** A one-time signed UPLOAD URL so the browser sends the file straight to
+ *  Supabase Storage — Vercel caps request bodies at ~4.5 MB, so large files
+ *  must never pass through our API routes. */
+export async function createSignedUpload(storagePath: string): Promise<string> {
+  await ensureBucket();
+  const res = await supa(`/object/upload/sign/${BUCKET}/${storagePath}`, { method: "POST" });
+  if (!res.ok) throw new Error(`Upload sign failed: ${res.status} ${await res.text()}`);
+  const { url } = (await res.json()) as { url: string };
+  return `${SUPABASE_URL}/storage/v1${url}`;
+}
+
+/** Confirm a direct upload landed: returns the stored object's size, or null. */
+export async function statObject(storagePath: string): Promise<number | null> {
+  const res = await supa(`/object/${BUCKET}/${storagePath}`, {
+    method: "GET",
+    headers: { Range: "bytes=0-0" },
+  });
+  if (!res.ok) return null;
+  const range = res.headers.get("content-range"); // "bytes 0-0/12345"
+  const total = range?.split("/")[1];
+  const length = res.headers.get("content-length");
+  return Number(total ?? length ?? 0) || 0;
+}
+
 /** A signed URL valid for `expiresIn` seconds. Never store these. */
 export async function signedUrl(storagePath: string, expiresIn = 300): Promise<string> {
   if (STORAGE_DRIVER === "supabase") {

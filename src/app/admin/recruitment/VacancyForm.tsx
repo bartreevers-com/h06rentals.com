@@ -183,7 +183,7 @@ export function VacancyForm({
       )}
       {state?.saved && !state.error && <p className="text-sm text-emerald-glow">Saved.</p>}
 
-      <button className="btn btn-primary" disabled={pending}>
+      <button className="btn btn-primary btn-md" disabled={pending}>
         {pending ? "Saving…" : vacancy ? "Save changes" : "Create draft vacancy"}
       </button>
     </form>

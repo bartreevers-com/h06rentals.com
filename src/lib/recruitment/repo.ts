@@ -6,6 +6,7 @@ import {
   applicationFiles,
   applications,
   candidates,
+  recruitmentEvents,
   vacancies,
   vacancyAudit,
   type Application,
@@ -143,6 +144,27 @@ export async function auditApplication(opts: {
 export async function applicationFilesFor(applicationId: number) {
   const db = await getDb();
   return db.select().from(applicationFiles).where(eq(applicationFiles.applicationId, applicationId));
+}
+
+/** General audit beyond status changes: views, screening, interviews,
+ *  scores, AI runs, finalists, owner decisions, deletions. */
+export async function logEvent(opts: {
+  actor: string;
+  actorRole: string;
+  action: string;
+  vacancyId?: number | null;
+  applicationId?: number | null;
+  detail?: string | null;
+}) {
+  const db = await getDb();
+  await db.insert(recruitmentEvents).values({
+    actor: opts.actor,
+    actorRole: opts.actorRole,
+    action: opts.action,
+    vacancyId: opts.vacancyId ?? null,
+    applicationId: opts.applicationId ?? null,
+    detail: opts.detail ?? null,
+  });
 }
 
 /** Can this staff member see this vacancy's candidates? */
