@@ -295,73 +295,31 @@ html[data-h06-splash="1"] .h06-splash {
   opacity: 1;
   pointer-events: auto;
 }
-.h06-splash-swirl {
-  position: absolute;
-  width: 560px;
-  height: 560px;
-  border-radius: 50%;
-  filter: blur(46px);
-  opacity: 0.5;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(46, 139, 106, 0.25) 80deg,
-    transparent 160deg,
-    rgba(63, 174, 133, 0.16) 240deg,
-    transparent 330deg
-  );
-  animation: h06-swirl 14s linear infinite;
-}
-.h06-splash-swirl-2 {
-  width: 400px;
-  height: 400px;
-  filter: blur(34px);
-  opacity: 0.4;
-  background: conic-gradient(
-    from 120deg,
-    transparent 0deg,
-    rgba(201, 205, 209, 0.1) 70deg,
-    transparent 150deg,
-    rgba(46, 139, 106, 0.2) 260deg,
-    transparent 340deg
-  );
-  animation: h06-swirl-rev 19s linear infinite;
-}
 .h06-splash-mark {
   position: relative;
   width: min(44vw, 250px);
   filter: drop-shadow(0 30px 70px rgba(30, 92, 69, 0.45));
-  animation: h06-breathe 5.5s ease-in-out infinite;
+  animation: h06-splash-arrival 2.5s cubic-bezier(0.3, 0, 0.25, 1) both;
 }
-.h06-splash-sheen {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  mix-blend-mode: screen;
-  pointer-events: none;
-}
-.h06-splash-sheen::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background: linear-gradient(
-    100deg,
-    transparent 42%,
-    rgba(232, 234, 236, 0.09) 50%,
-    transparent 58%
-  );
-  animation: h06-sheen 4.5s ease-in-out infinite;
+/* The arrival: the mark swells toward the viewer, breathing gently as it
+   approaches, then passes the camera and dissolves to reveal the hero. */
+@keyframes h06-splash-arrival {
+  0%   { transform: scale(0.76); opacity: 0; }
+  12%  { opacity: 1; }
+  32%  { transform: scale(0.95); }
+  50%  { transform: scale(0.91); }  /* breath out */
+  68%  { transform: scale(1.05); }  /* breath in, closer now */
+  80%  { transform: scale(1.16); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; filter: blur(10px) drop-shadow(0 0 0 transparent); }
 }
 .h06-splash-word {
-  animation: h06-rise 1s ease 0.5s both;
+  animation: h06-rise 0.9s ease 0.4s both, h06-fade-away 0.5s ease 1.7s forwards;
+}
+@keyframes h06-fade-away {
+  to { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .h06-splash-swirl,
-  .h06-splash-swirl-2,
-  .h06-splash-mark,
-  .h06-splash-sheen::after {
-    animation: none;
-  }
+  .h06-splash-mark { animation: h06-rise 0.6s ease both; }
   .h06-splash-word { animation: h06-rise 0.4s ease both; }
 }
 
@@ -564,3 +522,14 @@ html[data-h06-splash="1"] .h06-splash {
   font-weight: 500;
 }
 .backoffice .bo-nav-item.active svg { color: #8fd9b0; }
+
+/* Route loaders earn their appearance: invisible for the first 600ms, so
+   fast navigations never flash the swirl — it shows only when the network
+   is actually making the visitor wait. */
+.h06-loader-defer {
+  opacity: 0;
+  animation: h06-loader-earn 0.45s ease 0.6s forwards;
+}
+@keyframes h06-loader-earn {
+  to { opacity: 1; }
+}

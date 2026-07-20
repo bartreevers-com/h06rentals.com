@@ -27,11 +27,15 @@ export function BrandLoader({ size = 84, variant = "emerald" }: { size?: number;
   );
 }
 
-/** Full-viewport centred loading state for route segments. */
+/** Full-viewport centred loading state for route segments. The swirl stays
+ *  invisible for the first 600ms — it appears only when the network is
+ *  actually slow, never as a flash on quick navigations. */
 export function PageLoader({ variant = "emerald" }: { variant?: LoaderVariant }) {
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
-      <BrandLoader variant={variant} />
+      <div className="h06-loader-defer">
+        <BrandLoader variant={variant} />
+      </div>
     </div>
   );
 }

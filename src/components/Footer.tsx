@@ -33,6 +33,7 @@ export function Footer() {
               <li><Link href="/chauffeur" className="hover:text-cream">Chauffeur Hire</Link></li>
               <li><Link href="/services" className="hover:text-cream">Services</Link></li>
               <li><Link href="/corporate" className="hover:text-cream">Corporate Accounts</Link></li>
+              <li><Link href="/careers" className="hover:text-cream">Careers</Link></li>
             </ul>
           </div>
 

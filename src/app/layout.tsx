@@ -99,7 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // decide before first paint whether the splash shows — no content flash
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(!sessionStorage.getItem('h06_splash_seen'))document.documentElement.setAttribute('data-h06-splash','1')}catch(e){}",
+              "try{if(!localStorage.getItem('h06_splash_seen_v2'))document.documentElement.setAttribute('data-h06-splash','1')}catch(e){}",
           }}
         />
         <script
