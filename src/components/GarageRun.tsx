@@ -327,6 +327,7 @@ export function GarageRun() {
           height={62}
           draggable={false}
           className="w-full"
+          style={{ transform: "scaleX(-1)" }} // the sketch faces left; the run goes right
         />
       </div>
 
