@@ -9,6 +9,7 @@ import { CreateStaffForm, ResetPasswordForm } from "./TeamForms";
 export const dynamic = "force-dynamic";
 
 const ROLE_TONE: Record<string, string> = {
+  owner: "border-champagne/50 text-champagne",
   admin: "border-emerald-glow/40 text-emerald-glow",
   hr: "border-emerald-glow/40 text-emerald-glow",
   sales: "border-cream/25 text-cream-dim",
@@ -19,6 +20,7 @@ const ROLE_TONE: Record<string, string> = {
 };
 
 const ROLES: [string, string][] = [
+  ["owner", "Owner — everything, incl. Team"],
   ["admin", "Admin"],
   ["sales", "Sales"],
   ["driver", "Driver"],

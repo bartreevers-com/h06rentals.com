@@ -293,8 +293,8 @@ export async function seedIfEmpty(db: Db) {
  *  unguessable random password — the owner sets real ones from Team →
  *  Reset password. `staff` roles have no sign-in either way. */
 const STAFF_ROSTER: { name: string; phone: string; email: string; role: string }[] = [
-  { name: "Happy Omoruyi", phone: "9134668915", email: "ohappy@h06rentals.com", role: "admin" }, // Managing Director
-  { name: "Bartholomew Inyang", phone: "8135331188", email: "ibart@h06rentals.com", role: "admin" }, // General Manager
+  { name: "Happy Omoruyi", phone: "9134668915", email: "ohappy@h06rentals.com", role: "owner" }, // Managing Director
+  { name: "Bartholomew Inyang", phone: "8135331188", email: "ibart@h06rentals.com", role: "owner" }, // General Manager
   { name: "Lateefat Adedayo-Aiyegbusi", phone: "8148102662", email: "alateefat@h06rentals.com", role: "hr" }, // HR Manager
   { name: "Mohammed Sanusi", phone: "7033958191", email: "smohammed@h06rentals.com", role: "admin" }, // Operations Manager
   { name: "Samson Oyedele", phone: "9139999533", email: "osamson@h06rentals.com", role: "sales" }, // Sales Manager
@@ -338,6 +338,21 @@ async function seedStaffIfMissing(db: Db) {
     phones.add(phoneKey(member.phone));
     emails.add(member.email.toLowerCase());
   }
+
+  // One-time correction: the first roster deploy created the MD and GM as
+  // admin before the owner confirmed they are owners. Only flips the exact
+  // originally-seeded value; a deliberate later demotion won't be re-promoted
+  // unless it lands back on 'admin'. Safe to delete once the team is settled.
+  const { and, eq, inArray } = await import("drizzle-orm");
+  await db
+    .update(schema.staffUsers)
+    .set({ role: "owner" })
+    .where(
+      and(
+        inArray(schema.staffUsers.email, ["ohappy@h06rentals.com", "ibart@h06rentals.com"]),
+        eq(schema.staffUsers.role, "admin"),
+      ),
+    );
 }
 
 /** The launch vacancy: Podcast Host & Brand Creator — the voice of the

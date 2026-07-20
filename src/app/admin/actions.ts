@@ -365,7 +365,7 @@ export async function createStaffAction(_prev: { error?: string; ok?: string } |
   const password = String(formData.get("password") ?? "");
   if (name.length < 2) return { error: "Please add a name" };
   if (phone.length < 7) return { error: "Please add a phone number — it's their login" };
-  if (!["admin", "sales", "driver", "hr", "staff", "hiring_manager", "assessor"].includes(role))
+  if (!["owner", "admin", "sales", "driver", "hr", "staff", "hiring_manager", "assessor"].includes(role))
     return { error: "Choose a role" };
   if (role !== "staff" && password.length < 8) return { error: "Password must be at least 8 characters" };
   const db = await getDb();
@@ -401,7 +401,7 @@ export async function setStaffRoleAction(formData: FormData) {
   const session = await requireRole("owner");
   const id = Number(formData.get("id"));
   const role = String(formData.get("role"));
-  const allowed = ["admin", "sales", "driver", "hr", "hiring_manager", "assessor", "staff"];
+  const allowed = ["owner", "admin", "sales", "driver", "hr", "hiring_manager", "assessor", "staff"];
   if (!id || id === session.userId || !allowed.includes(role)) return;
   const db = await getDb();
   const rows = await db.select().from(staffUsers).where(eq(staffUsers.id, id)).limit(1);
