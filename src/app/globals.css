@@ -413,36 +413,6 @@ html[data-h06-splash="1"] .h06-splash {
   filter: drop-shadow(0 10px 26px rgba(30, 92, 69, 0.5));
   animation: h06-loader-turn 3.2s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
-/* matchday: the mark spins, grows, and becomes the match ball */
-@keyframes h06-morph-mark {
-  0% { opacity: 1; transform: rotate(0deg) scale(0.55); }
-  36% { opacity: 1; transform: rotate(290deg) scale(1.02); }
-  48% { opacity: 0; transform: rotate(360deg) scale(1.18); }
-  100% { opacity: 0; transform: rotate(360deg) scale(1.18); }
-}
-@keyframes h06-morph-ball {
-  0%, 38% { opacity: 0; transform: scale(0.62) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1) rotate(25deg); }
-  88% { opacity: 1; transform: scale(1) rotate(335deg); }
-  100% { opacity: 0; transform: scale(0.7) rotate(360deg); }
-}
-.h06-morph-mark {
-  animation: h06-morph-mark 4.4s cubic-bezier(0.45, 0, 0.3, 1) infinite !important;
-}
-.h06-morph-ball {
-  position: absolute;
-  inset: 0;
-  object-fit: contain;
-  opacity: 0;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
-  animation: h06-morph-ball 4.4s cubic-bezier(0.45, 0, 0.3, 1) infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .h06-morph-mark, .h06-morph-ball { animation: none !important; }
-  .h06-morph-ball { opacity: 1; }
-  .h06-morph-mark { opacity: 0; }
-}
-
 .h06-loader-ring-glass {
   background: conic-gradient(
     from 0deg,

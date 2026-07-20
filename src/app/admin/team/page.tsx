@@ -3,16 +3,30 @@ import { asc } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { staffUsers } from "@/lib/db/schema";
 import { hasRole } from "@/lib/admin-auth";
-import { toggleStaffAction } from "../actions";
+import { setStaffRoleAction, toggleStaffAction } from "../actions";
 import { CreateStaffForm, ResetPasswordForm } from "./TeamForms";
 
 export const dynamic = "force-dynamic";
 
 const ROLE_TONE: Record<string, string> = {
   admin: "border-emerald-glow/40 text-emerald-glow",
+  hr: "border-emerald-glow/40 text-emerald-glow",
   sales: "border-cream/25 text-cream-dim",
   driver: "border-cream/25 text-cream-dim",
+  hiring_manager: "border-cream/25 text-cream-dim",
+  assessor: "border-cream/25 text-cream-dim",
+  staff: "border-cream/15 text-muted",
 };
+
+const ROLES: [string, string][] = [
+  ["admin", "Admin"],
+  ["sales", "Sales"],
+  ["driver", "Driver"],
+  ["hr", "HR"],
+  ["hiring_manager", "Hiring manager"],
+  ["assessor", "Assessor"],
+  ["staff", "Staff (no sign-in)"],
+];
 
 export default async function AdminTeam() {
   if (!(await hasRole("owner"))) redirect("/admin");
@@ -55,6 +69,21 @@ export default async function AdminTeam() {
               <details className="mt-2">
                 <summary className="cursor-pointer text-xs text-muted hover:text-cream-dim">Reset password</summary>
                 <ResetPasswordForm userId={u.id} />
+              </details>
+              <details className="mt-1.5">
+                <summary className="cursor-pointer text-xs text-muted hover:text-cream-dim">Change role</summary>
+                <form action={setStaffRoleAction} className="mt-2 flex flex-wrap items-center gap-2">
+                  <input type="hidden" name="id" value={u.id} />
+                  <select name="role" className="field max-w-56" defaultValue={u.role}>
+                    {ROLES.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  <button className="btn btn-ghost btn-sm">Update role</button>
+                </form>
+                <p className="mt-1.5 text-[11px] text-muted">
+                  Takes effect on their next sign-in (an open session keeps the old role for up to 12 hours).
+                </p>
               </details>
             </div>
           ))}

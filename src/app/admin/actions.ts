@@ -395,6 +395,21 @@ export async function toggleStaffAction(formData: FormData) {
   revalidatePath("/admin/team");
 }
 
+/** Owner promotes or demotes any staff account's role. Their open session
+ *  keeps the old role until it expires (max 12h) or they sign in again. */
+export async function setStaffRoleAction(formData: FormData) {
+  const session = await requireRole("owner");
+  const id = Number(formData.get("id"));
+  const role = String(formData.get("role"));
+  const allowed = ["admin", "sales", "driver", "hr", "hiring_manager", "assessor", "staff"];
+  if (!id || id === session.userId || !allowed.includes(role)) return;
+  const db = await getDb();
+  const rows = await db.select().from(staffUsers).where(eq(staffUsers.id, id)).limit(1);
+  if (!rows[0] || rows[0].role === role) return;
+  await db.update(staffUsers).set({ role }).where(eq(staffUsers.id, id));
+  revalidatePath("/admin/team");
+}
+
 /* ── performance (owner + HR only) ───────────────────────────── */
 
 async function requirePerf() {

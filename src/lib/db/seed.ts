@@ -1,5 +1,7 @@
+import crypto from "crypto";
 import { sql } from "drizzle-orm";
 import * as schema from "./schema";
+import { hashPassword } from "../admin-auth";
 import { VEHICLE_GALLERIES } from "../vehicle-gallery-data";
 
 type Db = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof schema>;
@@ -11,6 +13,7 @@ type Db = import("drizzle-orm/postgres-js").PostgresJsDatabase<typeof schema>;
  */
 export async function seedIfEmpty(db: Db) {
   await seedRecruitmentIfEmpty(db);
+  await seedStaffIfMissing(db);
   const existing = await db.select({ n: sql<number>`count(*)` }).from(schema.vehicles);
   if (Number(existing[0]?.n ?? 0) > 0) {
     await syncGalleries(db);
@@ -282,6 +285,59 @@ export async function seedIfEmpty(db: Db) {
   ]);
 
   await syncGalleries(db);
+}
+
+/** The H06 team roster (provided by the owner, 2026-07-20). Idempotent:
+ *  matched against existing accounts by phone (last 10 digits) or email, so
+ *  nobody is duplicated and nothing existing is touched. New accounts get an
+ *  unguessable random password — the owner sets real ones from Team →
+ *  Reset password. `staff` roles have no sign-in either way. */
+const STAFF_ROSTER: { name: string; phone: string; email: string; role: string }[] = [
+  { name: "Happy Omoruyi", phone: "9134668915", email: "ohappy@h06rentals.com", role: "admin" }, // Managing Director
+  { name: "Bartholomew Inyang", phone: "8135331188", email: "ibart@h06rentals.com", role: "admin" }, // General Manager
+  { name: "Lateefat Adedayo-Aiyegbusi", phone: "8148102662", email: "alateefat@h06rentals.com", role: "hr" }, // HR Manager
+  { name: "Mohammed Sanusi", phone: "7033958191", email: "smohammed@h06rentals.com", role: "admin" }, // Operations Manager
+  { name: "Samson Oyedele", phone: "9139999533", email: "osamson@h06rentals.com", role: "sales" }, // Sales Manager
+  { name: "King Ekpedeme", phone: "9121739055", email: "eking@h06rentals.com", role: "staff" }, // Maintenance Manager
+  { name: "Bukola Alonge", phone: "9139578024", email: "abukola@h06rentals.com", role: "staff" }, // Social Media Manager
+  { name: "Olasumbo Banjoko", phone: "7074532272", email: "bolasumbo@h06rentals.com", role: "sales" }, // Accountant/Office Assistant
+  { name: "Ifedayo Daramola", phone: "7074532276", email: "h06driver4@gmail.com", role: "driver" },
+  { name: "Olajide Salawu", phone: "8086890281", email: "h06driver2@gmail.com", role: "driver" },
+  { name: "Michael Freeman", phone: "8149937116", email: "h06driver7@gmail.com", role: "driver" },
+  { name: "Festus Moses", phone: "8084972069", email: "h06driver3@gmail.com", role: "driver" },
+  { name: "Okechukwu Igbokwe", phone: "9130548281", email: "h06driver1@gmail.com", role: "driver" },
+  { name: "Akorede Lawal", phone: "7074532270", email: "h06driver5@gmail.com", role: "driver" },
+  { name: "Olushola Olusesan", phone: "7074532275", email: "sola.olusesan@gmail.com", role: "driver" },
+  { name: "Akin Bandele", phone: "9139578080", email: "h06driver6@gmail.com", role: "driver" },
+  { name: "Preye Sitoru", phone: "9021223649", email: "joepreye@gmail.com", role: "driver" },
+  { name: "Chimaobi Okere", phone: "7074540827", email: "okerechimaobimark1995@gmail.com", role: "driver" },
+];
+
+/** Last 10 digits — matches 0913…, +234913… and bare 913… alike. */
+function phoneKey(phone: string): string {
+  return phone.replace(/\D/g, "").slice(-10);
+}
+
+async function seedStaffIfMissing(db: Db) {
+  const existing = await db
+    .select({ phone: schema.staffUsers.phone, email: schema.staffUsers.email })
+    .from(schema.staffUsers);
+  const phones = new Set(existing.map((e) => phoneKey(e.phone)));
+  const emails = new Set(existing.map((e) => (e.email ?? "").toLowerCase()).filter(Boolean));
+
+  for (const member of STAFF_ROSTER) {
+    if (phones.has(phoneKey(member.phone)) || emails.has(member.email.toLowerCase())) continue;
+    await db.insert(schema.staffUsers).values({
+      name: member.name,
+      phone: `0${member.phone}`,
+      email: member.email,
+      role: member.role,
+      passwordHash: hashPassword(crypto.randomUUID()),
+      isActive: true,
+    });
+    phones.add(phoneKey(member.phone));
+    emails.add(member.email.toLowerCase());
+  }
 }
 
 /** The launch vacancy: Podcast Host & Brand Creator — the voice of the
