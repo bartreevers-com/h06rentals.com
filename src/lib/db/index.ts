@@ -22,6 +22,7 @@ async function createDb(): Promise<Db> {
     const client = postgres(url, { max: 5, prepare: false });
     const db = drizzle(client, { schema }) as Db;
     await ensureSchema(db);
+    await hardenHostedDb(db);
     await seedIfEmpty(db);
     return db;
   }
@@ -36,6 +37,49 @@ async function createDb(): Promise<Db> {
   await ensureSchema(db);
   await seedIfEmpty(db);
   return db;
+}
+
+/**
+ * Lock the hosted database against Supabase's auto-generated REST API.
+ *
+ * This app talks to Postgres directly over DATABASE_URL and never uses
+ * PostgREST — but Supabase exposes every `public` table through its REST
+ * layer to the `anon`/`authenticated` API roles unless Row-Level Security
+ * is on. So on every boot we: enable RLS on every public table (with no
+ * policies, i.e. deny-all for API roles; the owning connection role is
+ * unaffected) and revoke the API roles' table privileges outright, for
+ * current and future tables. Idempotent, runs only against hosted Postgres
+ * (PGlite has no API surface or these roles).
+ */
+async function hardenHostedDb(db: Db) {
+  const { sql } = await import("drizzle-orm");
+  try {
+    const tables = (await db.execute(
+      sql.raw(`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`),
+    )) as unknown as { tablename: string }[];
+    for (const t of tables) {
+      try {
+        await db.execute(sql.raw(`ALTER TABLE public."${t.tablename}" ENABLE ROW LEVEL SECURITY`));
+      } catch (err) {
+        console.error(`[db-harden] RLS on ${t.tablename} failed`, err);
+      }
+    }
+    for (const statement of [
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated`,
+      `REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated`,
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated`,
+      `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated`,
+    ]) {
+      try {
+        await db.execute(sql.raw(statement));
+      } catch (err) {
+        console.error("[db-harden] revoke failed", err);
+      }
+    }
+  } catch (err) {
+    // hardening must never take the app down — log loudly and serve
+    console.error("[db-harden] failed", err);
+  }
 }
 
 /** Idempotent DDL so the app self-provisions on first boot. */
